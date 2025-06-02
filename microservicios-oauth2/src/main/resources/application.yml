@@ -1,0 +1,47 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: microservicio-oauth2
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+
+server:
+  port: 8082
+  servlet:
+    context-path: /auth
+
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+# AGREGADO: Configuración específica de Feign
+feign:
+  client:
+    config:
+      MICROSERVICIO-USUARIOS:  # Nombre en mayúsculas
+        loggerLevel: full
+        connectTimeout: 5000
+        readTimeout: 10000
+
+logging:
+  level:
+    # Paquete de la aplicación
+    com.formacionbdi: DEBUG
+    
+    # Feign debugging
+    com.formacionbdi.microservicios.app.oauth.clients: DEBUG
+    feign: DEBUG
+    
+    # Spring Security OAuth2
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    
+    # Eureka
+    org.springframework.cloud.netflix.eureka: DEBUG

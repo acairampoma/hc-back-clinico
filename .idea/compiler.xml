@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="commons-alumnos" />
+        <module name="microservicios-gateway" />
+        <module name="commons-microservicios" />
+        <module name="microservicios-test" />
+        <module name="microservicios-eureka" />
+        <module name="microservicios-usuarios" />
+        <module name="commons-examenes" />
+        <module name="microservicios-oauth2" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="microservicios-cursos" target="12" />
+      <module name="microservicios-examenes" target="12" />
+      <module name="microservicios-respuestas" target="12" />
+      <module name="microservicios-zuul" target="12" />
+      <module name="msvc-oauth" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="commons-alumnos" options="-parameters" />
+      <module name="commons-examenes" options="-parameters" />
+      <module name="commons-microservicios" options="-parameters" />
+      <module name="microservicios-cursos" options="-parameters" />
+      <module name="microservicios-eureka" options="-parameters" />
+      <module name="microservicios-examenes" options="-parameters" />
+      <module name="microservicios-gateway" options="-parameters" />
+      <module name="microservicios-oauth2" options="-parameters" />
+      <module name="microservicios-respuestas" options="-parameters" />
+      <module name="microservicios-test" options="-parameters" />
+      <module name="microservicios-usuarios" options="-parameters" />
+      <module name="microservicios-zuul" options="-parameters" />
+      <module name="msvc-oauth" options="-parameters" />
+    </option>
+  </component>
+</project>
