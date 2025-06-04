@@ -13,7 +13,9 @@
         <module name="commons-alumnos" />
         <module name="microservicios-gateway" />
         <module name="microservicios-usuarios" />
+        <module name="microservicios-receta" />
         <module name="commons-examenes" />
+        <module name="microservicios-notas" />
         <module name="microservicios-oauth2" />
         <module name="commons-microservicios" />
       </profile>
@@ -36,7 +38,9 @@
       <module name="microservicios-examenes" options="-parameters" />
       <module name="microservicios-gateway" options="-parameters" />
       <module name="microservicios-listas" options="-parameters" />
+      <module name="microservicios-notas" options="-parameters" />
       <module name="microservicios-oauth2" options="-parameters" />
+      <module name="microservicios-receta" options="-parameters" />
       <module name="microservicios-respuestas" options="-parameters" />
       <module name="microservicios-test" options="-parameters" />
       <module name="microservicios-usuarios" options="-parameters" />

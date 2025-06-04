@@ -68,6 +68,34 @@ spring:
           filters:
             - StripPrefix=2
 
+          #  Microservicio de Pacientes por Cama - PROTEGIDO
+        - id: microservicio-pacientes
+          uri: lb://microservicio-listas
+          predicates:
+            - Path=/api/pacientes/**
+          filters:
+            - StripPrefix=1
+
+          # Microservicio de Notas Vitales - PROTEGIDO
+        - id: microservicio-notas
+          uri: lb://microservicio-notas
+          predicates:
+            - Path=/api/notas/**
+          filters:
+            - StripPrefix=1
+
+
+          # Microservicio de recetas - PROTEGIDO
+        - id: microservicio-recetas
+          uri: lb://microservicio-recetas
+          predicates:
+            - Path=/api/recetas/**
+          filters:
+            - StripPrefix=1
+
+
+
+
   # ✨ CONFIGURACIÓN JWT SECURITY
   security:
     oauth2:

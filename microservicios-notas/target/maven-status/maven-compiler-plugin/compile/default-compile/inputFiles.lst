@@ -1,0 +1,13 @@
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\controllers\HospitalizacionNotaController.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\services\HospitalizacionNotaService.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\exception\NotaNotFoundException.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\models\dto\HospitalizacionNotaDTO.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\exception\NotaBusinessException.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\models\response\ApiResponse.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\services\impl\HospitalizacionNotaServiceImpl.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\exception\NotaValidationException.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\exception\NotaProcessingException.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\models\entity\HospitalizacionNota.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\NotasApplication.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\repository\HospitalizacionNotaRepository.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-notas\src\main\java\com\formacionbdi\microservicios\app\notas\exception\GlobalExceptionHandler.java

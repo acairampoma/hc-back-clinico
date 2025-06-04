@@ -18,6 +18,8 @@
         <option value="$PROJECT_DIR$/microservicios-oauth2/pom.xml" />
         <option value="$PROJECT_DIR$/msvc-oauth/pom.xml" />
         <option value="$PROJECT_DIR$/microservicios-listas/pom.xml" />
+        <option value="$PROJECT_DIR$/microservicios-notas/pom.xml" />
+        <option value="$PROJECT_DIR$/microservicios-receta/pom.xml" />
       </list>
     </option>
     <option name="workspaceImportForciblyTurnedOn" value="true" />
