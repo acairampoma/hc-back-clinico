@@ -60,6 +60,14 @@ spring:
           filters:
             - StripPrefix=2
 
+        # Ruta para microservicio listas - PROTEGIDA
+        - id: microservicio-listas
+          uri: lb://microservicio-listas
+          predicates:
+            - Path=/api/listas/listas/**
+          filters:
+            - StripPrefix=2
+
   # ✨ CONFIGURACIÓN JWT SECURITY
   security:
     oauth2:
@@ -89,9 +97,7 @@ management:
     web:
       exposure:
         include: "*"
-  # ❌ REMOVIDO: Conflicto con JWT security
-  # security:
-  #   enabled: false
+
 
 logging:
   level:

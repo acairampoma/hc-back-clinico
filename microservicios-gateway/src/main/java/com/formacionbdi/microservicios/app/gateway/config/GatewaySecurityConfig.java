@@ -28,6 +28,7 @@ public class GatewaySecurityConfig {
 
                         // 🔐 PROTEGIDAS - Requieren JWT válido
                         .pathMatchers("/api/usuarios/**").authenticated()
+                        .pathMatchers("/api/listas/**").authenticated()
                         .pathMatchers("/api/test/**").authenticated()
 
                         .anyExchange().authenticated()
