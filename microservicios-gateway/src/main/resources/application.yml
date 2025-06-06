@@ -6,10 +6,12 @@ spring:
       discovery:
         locator:
           enabled: false
+
+      # 🌐 CONFIGURACIÓN CORS SIMPLE
       globalcors:
-        cors-configurations:
+        corsConfigurations:
           '[/**]':
-            allowedOriginPatterns: "*"
+            allowedOrigins: "http://localhost:8000"
             allowedMethods:
               - GET
               - POST
@@ -18,8 +20,10 @@ spring:
               - OPTIONS
             allowedHeaders: "*"
             allowCredentials: true
+
+      # 🛣️ CONFIGURACIÓN DE RUTAS - ORDEN IMPORTANTE (más específicas primero)
       routes:
-        # CORREGIDO: Ruta para OAuth2 Authorization Server con context-path
+        # OAuth2 Authorization Server
         - id: microservicio-oauth2
           uri: lb://microservicio-oauth2
           predicates:
@@ -27,7 +31,7 @@ spring:
           filters:
             - RewritePath=/oauth2/(?<path>.*), /auth/oauth2/$\{path}
 
-        # NUEVA: Ruta para well-known endpoints (JWK, OpenID Config)
+        # Well-known endpoints
         - id: microservicio-oauth2-wellknown
           uri: lb://microservicio-oauth2
           predicates:
@@ -35,68 +39,78 @@ spring:
           filters:
             - PrefixPath=/auth
 
-        # Ruta para usuarios (endpoints generales) - PROTEGIDA
-        - id: microservicio-usuarios
-          uri: lb://microservicio-usuarios
-          predicates:
-            - Path=/api/usuarios/**
-          filters:
-            - StripPrefix=2
-
-        # Ruta específica para clientes OAuth - PROTEGIDA
+        # Usuarios con rutas específicas primero
         - id: microservicio-usuarios-clients
           uri: lb://microservicio-usuarios
           predicates:
             - Path=/api/usuarios/clients/**
           filters:
-            - StripPrefix=2
-            - PrefixPath=/api
+            - StripPrefix=2  # Quita /api/usuarios, deja /clients/**
 
-        # Ruta para microservicio test - PROTEGIDA
+        # Usuarios - ruta general
+        - id: microservicio-usuarios
+          uri: lb://microservicio-usuarios
+          predicates:
+            - Path=/api/usuarios/**
+          filters:
+            - StripPrefix=2  # Quita /api/usuarios, envía /**
+
+        # Test
         - id: microservicio-test
           uri: lb://microservicio-test
           predicates:
             - Path=/api/test/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=2  # Quita /api/test, envía /**
 
-        # Ruta para microservicio listas - PROTEGIDA
+        # Listas
         - id: microservicio-listas
           uri: lb://microservicio-listas
           predicates:
-            - Path=/api/listas/listas/**
+            - Path=/api/listas/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=2  # Quita /api/listas, envía /**
 
-          #  Microservicio de Pacientes por Cama - PROTEGIDO
+        # ✅ PACIENTES - CORREGIDO
         - id: microservicio-pacientes
           uri: lb://microservicio-listas
           predicates:
             - Path=/api/pacientes/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=1  # Quita /api, envía /pacientes/** al microservicio
 
-          # Microservicio de Notas Vitales - PROTEGIDO
+        # Notas
         - id: microservicio-notas
           uri: lb://microservicio-notas
           predicates:
             - Path=/api/notas/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=1  # Quita /api, envía /notas/**
 
-
-          # Microservicio de recetas - PROTEGIDO
-        - id: microservicio-recetas
-          uri: lb://microservicio-recetas
+        # Recetas
+        - id: microservicio-receta
+          uri: lb://microservicio-receta
           predicates:
             - Path=/api/recetas/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=1  # Quita /api, envía /recetas/**
 
+        # Órdenes
+        - id: microservicio-orden
+          uri: lb://microservicio-orden
+          predicates:
+            - Path=/api/ordenes/**
+          filters:
+            - StripPrefix=1  # Quita /api, envía /ordenes/**
 
+        # Catálogos
+        - id: microservicio-catalogos
+          uri: lb://microservicio-catalogos
+          predicates:
+            - Path=/api/catalogos/**
+          filters:
+            - StripPrefix=1  # Quita /api, envía /catalogos/**
 
-
-  # ✨ CONFIGURACIÓN JWT SECURITY
   security:
     oauth2:
       resourceserver:
@@ -116,19 +130,17 @@ eureka:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${random.value}
 
-# ✨ CONFIGURACIÓN JWT PERSONALIZADA
-oauth2:
-  jwk-set-uri: http://localhost:8082/auth/.well-known/jwks.json
-
 management:
   endpoints:
     web:
       exposure:
         include: "*"
 
+oauth2:
+  jwk-set-uri: http://localhost:8082/auth/.well-known/jwks.json
 
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.web.reactive: DEBUG
-    org.springframework.security: DEBUG  # ✨ AGREGADO para debugging JWT
+    org.springframework.security: DEBUG

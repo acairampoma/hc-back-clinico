@@ -4,6 +4,7 @@
     <file url="file://$PROJECT_DIR$/commons-alumnos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/commons-examenes/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/commons-microservicios/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/microservicios-catalogos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-cursos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-eureka/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-examenes/src/main/java" charset="UTF-8" />
@@ -11,6 +12,7 @@
     <file url="file://$PROJECT_DIR$/microservicios-listas/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-notas/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-oauth2/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/microservicios-orden/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-receta/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-respuestas/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-test/src/main/java" charset="UTF-8" />

@@ -87,14 +87,20 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
 
         try {
             log.info("Buscando cama por número: {}", bedNumber);
-            Optional<Object[]> resultado = repository.obtenerCamaPorNumero(bedNumber.trim());
 
-            if (resultado.isEmpty()) {
+            // CORREGIDO: Ahora el repository devuelve List<Object[]>
+            List<Object[]> resultados = repository.obtenerCamaPorNumero(bedNumber.trim());
+
+            if (resultados.isEmpty()) {
                 log.warn("No se encontró la cama con número: {}", bedNumber);
                 throw new ResourceNotFoundException("No se encontró la cama con número: " + bedNumber);
             }
 
-            PacientePorCamaDTO cama = convertirResultadoADTO(resultado.get());
+            // Tomar el primer resultado de la lista
+            Object[] primerResultado = resultados.get(0);
+            log.debug("Resultado obtenido: array de {} elementos", primerResultado.length);
+
+            PacientePorCamaDTO cama = convertirResultadoADTO(primerResultado);
             log.info("Cama {} encontrada exitosamente", bedNumber);
             return cama;
 
@@ -134,14 +140,18 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
 
         try {
             log.info("Buscando paciente por DNI: {}", dni);
-            Optional<Object[]> resultado = repository.buscarPacientePorDni(dni.trim());
 
-            if (resultado.isEmpty()) {
+            // CORREGIDO: Ahora el repository devuelve List<Object[]>
+            List<Object[]> resultados = repository.buscarPacientePorDni(dni.trim());
+
+            if (resultados.isEmpty()) {
                 log.warn("No se encontró paciente con DNI: {}", dni);
                 throw new ResourceNotFoundException("No se encontró paciente con DNI: " + dni);
             }
 
-            PacientePorCamaDTO paciente = convertirResultadoADTO(resultado.get());
+            // Tomar el primer resultado
+            Object[] primerResultado = resultados.get(0);
+            PacientePorCamaDTO paciente = convertirResultadoADTO(primerResultado);
             log.info("Paciente con DNI {} encontrado en cama {}", dni, paciente.getBedNumber());
             return paciente;
 
@@ -256,8 +266,8 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
         }
 
         try {
-            Optional<Object[]> resultado = repository.obtenerCamaPorNumero(bedNumber.trim());
-            return resultado.isPresent();
+            List<Object[]> resultado = repository.obtenerCamaPorNumero(bedNumber.trim());
+            return !resultado.isEmpty();
         } catch (Exception e) {
             log.error("Error al verificar existencia de cama {}: {}", bedNumber, e.getMessage());
             return false;
@@ -316,8 +326,6 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
         try {
             log.info("Buscando con filtros: {}", filtros);
 
-            // Por ahora implementamos búsqueda básica
-            // Se puede extender para filtros más complejos
             String estado = (String) filtros.get("estado");
 
             if ("ocupada".equalsIgnoreCase(estado)) {
@@ -348,17 +356,53 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
      */
     private PacientePorCamaDTO convertirResultadoADTO(Object[] resultado) {
         try {
-            String bedNumber = (String) resultado[0];
-            String patientDataJson = (String) resultado[1];
+            // Validar que el resultado tenga al menos un elemento
+            if (resultado == null || resultado.length == 0) {
+                throw new IllegalArgumentException("Resultado inválido: array vacío o null");
+            }
+
+            log.debug("Procesando resultado con {} elementos", resultado.length);
+            log.debug("Elemento 0 tipo: {}, valor: {}",
+                    resultado[0] != null ? resultado[0].getClass().getSimpleName() : "null",
+                    resultado[0]);
+
+            if (resultado.length > 1) {
+                log.debug("Elemento 1 tipo: {}, valor: {}",
+                        resultado[1] != null ? resultado[1].getClass().getSimpleName() : "null",
+                        resultado[1]);
+            }
+
+            String bedNumber = null;
+            String patientDataJson = null;
+
+            // Extraer bedNumber (primer elemento)
+            if (resultado[0] != null) {
+                bedNumber = resultado[0].toString();
+            }
+
+            // Extraer patientDataJson (segundo elemento si existe)
+            if (resultado.length > 1 && resultado[1] != null) {
+                patientDataJson = resultado[1].toString();
+            }
 
             PacientePorCamaDTO dto = new PacientePorCamaDTO();
             dto.setBedNumber(bedNumber);
 
             // Si hay datos del paciente, convertir JSON a objeto
-            if (patientDataJson != null && !patientDataJson.trim().isEmpty()) {
-                PacientePorCamaDTO.PatientData patientData = objectMapper.readValue(
-                        patientDataJson, PacientePorCamaDTO.PatientData.class);
-                dto.setPatientData(patientData);
+            if (patientDataJson != null && !patientDataJson.trim().isEmpty() && !"null".equals(patientDataJson)) {
+                try {
+                    log.debug("Parseando JSON: {}", patientDataJson.substring(0, Math.min(100, patientDataJson.length())));
+                    PacientePorCamaDTO.PatientData patientData = objectMapper.readValue(
+                            patientDataJson, PacientePorCamaDTO.PatientData.class);
+                    dto.setPatientData(patientData);
+                    log.debug("JSON parseado exitosamente");
+                } catch (Exception jsonException) {
+                    log.warn("Error al parsear JSON de paciente para cama {}: {}", bedNumber, jsonException.getMessage());
+                    // En caso de error de JSON, dejar patientData como null
+                    dto.setPatientData(null);
+                }
+            } else {
+                log.debug("No hay datos de paciente para cama {}", bedNumber);
             }
 
             return dto;

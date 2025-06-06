@@ -7,17 +7,19 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="microservicios-test" />
-        <module name="microservicios-eureka" />
         <module name="microservicios-listas" />
         <module name="commons-alumnos" />
         <module name="microservicios-gateway" />
+        <module name="microservicios-orden" />
+        <module name="commons-microservicios" />
+        <module name="microservicios-test" />
+        <module name="microservicios-eureka" />
         <module name="microservicios-usuarios" />
         <module name="microservicios-receta" />
         <module name="commons-examenes" />
         <module name="microservicios-notas" />
+        <module name="microservicios-catalogos" />
         <module name="microservicios-oauth2" />
-        <module name="commons-microservicios" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -33,6 +35,7 @@
       <module name="commons-alumnos" options="-parameters" />
       <module name="commons-examenes" options="-parameters" />
       <module name="commons-microservicios" options="-parameters" />
+      <module name="microservicios-catalogos" options="-parameters" />
       <module name="microservicios-cursos" options="-parameters" />
       <module name="microservicios-eureka" options="-parameters" />
       <module name="microservicios-examenes" options="-parameters" />
@@ -40,6 +43,7 @@
       <module name="microservicios-listas" options="-parameters" />
       <module name="microservicios-notas" options="-parameters" />
       <module name="microservicios-oauth2" options="-parameters" />
+      <module name="microservicios-orden" options="-parameters" />
       <module name="microservicios-receta" options="-parameters" />
       <module name="microservicios-respuestas" options="-parameters" />
       <module name="microservicios-test" options="-parameters" />

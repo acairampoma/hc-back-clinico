@@ -20,7 +20,6 @@ import java.util.Map;
 @RequestMapping("/pacientes")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class PacientePorCamaController {
 
     private final PacientePorCamaService pacientePorCamaService;

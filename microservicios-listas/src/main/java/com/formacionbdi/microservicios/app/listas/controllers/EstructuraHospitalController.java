@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/listas")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class EstructuraHospitalController {
 
     private final EstructuraHospitalService estructuraService;

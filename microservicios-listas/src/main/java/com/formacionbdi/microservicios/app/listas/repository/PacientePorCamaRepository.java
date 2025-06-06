@@ -1,3 +1,5 @@
+// 1. REPOSITORY CORREGIDO
+// ===============================================
 package com.formacionbdi.microservicios.app.listas.repository;
 
 import com.formacionbdi.microservicios.app.listas.models.entity.PacientePorCama;
@@ -39,10 +41,11 @@ public interface PacientePorCamaRepository extends JpaRepository<PacientePorCama
 
     /**
      * Obtiene información de una cama específica por número
+     * CORREGIDO: Cambiado para devolver List<Object[]> y manejar como lista
      */
     @Query(value = "SELECT bed_number, CAST(patient_data AS TEXT) as patient_data FROM vista_pacientes_por_cama WHERE bed_number = :bedNumber",
             nativeQuery = true)
-    Optional<Object[]> obtenerCamaPorNumero(@Param("bedNumber") String bedNumber);
+    List<Object[]> obtenerCamaPorNumero(@Param("bedNumber") String bedNumber);
 
     /**
      * Busca camas por rango de números (ej: C001-C010)
@@ -53,10 +56,11 @@ public interface PacientePorCamaRepository extends JpaRepository<PacientePorCama
 
     /**
      * Busca pacientes por DNI
+     * CORREGIDO: Cambiado para devolver List<Object[]>
      */
     @Query(value = "SELECT bed_number, CAST(patient_data AS TEXT) as patient_data FROM vista_pacientes_por_cama WHERE patient_data->>'personal_info'->>'dni' = :dni",
             nativeQuery = true)
-    Optional<Object[]> buscarPacientePorDni(@Param("dni") String dni);
+    List<Object[]> buscarPacientePorDni(@Param("dni") String dni);
 
     /**
      * Busca pacientes por nombre (búsqueda parcial)
