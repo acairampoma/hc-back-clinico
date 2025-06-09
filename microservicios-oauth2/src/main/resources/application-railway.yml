@@ -1,0 +1,114 @@
+# 🔐 APPLICATION-RAILWAY.YML OAUTH2
+# Ubicación: /microservicios-oauth2/src/main/resources/application-railway.yml
+
+# ============================================
+# 🚀 RAILWAY OAUTH2 CONFIGURATION - JDK 17
+# ============================================
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: microservicio-oauth2
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+
+server:
+  port: ${PORT:8082}  # Railway asigna PORT automáticamente
+  servlet:
+    context-path: /auth
+
+# ============================================
+# 🔍 EUREKA CLIENT CONFIGURATION
+# ============================================
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${RAILWAY_REPLICA_ID:${random.value}}
+    hostname: ${RAILWAY_PUBLIC_DOMAIN:oauth2.railway.internal}
+    prefer-ip-address: false
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    # Metadata para Railway
+    metadata-map:
+      management.port: ${PORT:8082}
+      railway.deployment: production
+      context-path: /auth
+  client:
+    service-url:
+      # Conexión a nuestro Eureka en Railway
+      defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 30
+
+# ============================================
+# 🔗 FEIGN CLIENT CONFIGURATION
+# ============================================
+feign:
+  client:
+    config:
+      MICROSERVICIO-USUARIOS:  # Nombre en mayúsculas
+        loggerLevel: full
+        connectTimeout: 5000
+        readTimeout: 10000
+        # URL del servicio usuarios en Railway
+        url: ${USUARIOS_SERVICE_URL:https://vivacious-benevolence-production.up.railway.app}
+
+# ============================================
+# 📊 ACTUATOR & MONITORING
+# ============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,env,metrics"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+# ============================================
+# 📝 LOGGING CONFIGURATION
+# ============================================
+logging:
+  level:
+    root: INFO
+    # Paquete de la aplicación
+    com.formacionbdi: DEBUG
+    # Feign debugging
+    com.formacionbdi.microservicios.app.oauth.clients: DEBUG
+    feign: DEBUG
+    # Spring Security OAuth2
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    # Eureka
+    org.springframework.cloud.netflix.eureka: DEBUG
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{36}] - %msg%n"
+
+# ============================================
+# 🎯 RAILWAY ENVIRONMENT INFO
+# ============================================
+info:
+  app:
+    name: ${spring.application.name}
+    description: "OAuth2 Authorization Server - Sistema Hospitalario"
+    version: "1.0.0"
+    environment: "railway-production"
+    jdk: "17"
+  java:
+    version: ${java.version}
+  railway:
+    service: "oauth2"
+    deployment-url: ${RAILWAY_PUBLIC_DOMAIN:not-set}
+    context-path: "/auth"
+    eureka-server: "hc-back-clinico-production.up.railway.app"
+    usuarios-service: "vivacious-benevolence-production.up.railway.app"
