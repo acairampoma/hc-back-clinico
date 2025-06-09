@@ -1,24 +1,24 @@
-# Usar Java 11 específicamente
-FROM openjdk:11-jre-slim
-
-# Metadatos
-LABEL maintainer="Alan Cairampoma"
-LABEL description="Microservicio Hospital Digital"
-
-# Variables de entorno
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
-
-# Crear directorio de trabajo
+# MULTISTAGE BUILD - Compilar + Ejecutar
+FROM maven:3.8.6-openjdk-11 AS build
 WORKDIR /app
 
-# Copiar el JAR compilado
-COPY target/*.jar app.jar
+# Copiar solo el microservicio Gateway
+COPY microservicios-gateway/pom.xml ./
+COPY microservicios-gateway/src ./src
 
-# Exponer puerto (Railway usa PORT variable)
+# Compilar la aplicación
+RUN mvn clean package -DskipTests
+
+# STAGE 2 - Runtime
+FROM openjdk:11-jre-slim
+WORKDIR /app
+
+# Copiar el JAR compilado del stage anterior
+COPY --from=build /app/target/*.jar app.jar
+
+# Configuración para Railway
 EXPOSE ${PORT:-8080}
-
-# Configuración de JVM para contenedores
-ENV JAVA_OPTS="$JAVA_OPTS -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
 # Comando de inicio
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
