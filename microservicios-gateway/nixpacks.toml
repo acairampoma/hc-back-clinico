@@ -1,8 +1,0 @@
-[variables]
-NIXPACKS_JDK_VERSION = "11"
-
-[phases.build]
-cmd = "cd microservicios-gateway && mvn clean package -DskipTests"
-
-[phases.start]
-cmd = "cd microservicios-gateway && java -jar target/*.jar"

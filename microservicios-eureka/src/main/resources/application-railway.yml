@@ -1,0 +1,101 @@
+# 🔍 APPLICATION-RAILWAY.YML
+# Ubicación: /microservicios-eureka/src/main/resources/application-railway.yml
+
+# ============================================
+# 🚀 RAILWAY DEPLOYMENT CONFIGURATION
+# Este archivo SOBRESCRIBE application.yml cuando usamos profile=railway
+# ============================================
+
+spring:
+  application:
+    name: microservicio-eureka-server
+  # No incluimos spring.security.basic porque está deprecado
+
+server:
+  port: ${PORT:8761}  # Railway asigna PORT automáticamente
+
+# ============================================
+# 🔍 EUREKA SERVER CONFIGURATION
+# ============================================
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      # Railway networking - usa el hostname interno
+      defaultZone: http://${eureka.instance.hostname:localhost}:${server.port}/eureka/
+    # Configuraciones adicionales para Railway
+    registry-fetch-interval-seconds: 30
+    eureka-service-url-poll-interval-seconds: 300
+
+  server:
+    enable-self-preservation: false  # Para desarrollo/demo
+    eviction-interval-timer-in-ms: 5000
+    renewal-percent-threshold: 0.49  # Para demo con pocos servicios
+    response-cache-update-interval-ms: 30000
+
+  instance:
+    # Railway Public Domain para acceso externo
+    hostname: ${RAILWAY_PUBLIC_DOMAIN:localhost}
+    # Metadata para Railway
+    metadata-map:
+      management.port: ${PORT:8761}
+      railway.deployment: production
+      zone: railway-cloud
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# ============================================
+# 📊 ACTUATOR & MONITORING
+# ============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,env,metrics,eureka"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+# ============================================
+# 📝 LOGGING CONFIGURATION
+# ============================================
+logging:
+  level:
+    root: INFO
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    org.springframework.cloud.netflix.eureka: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{36}] - %msg%n"
+
+# ============================================
+# 🎯 RAILWAY ENVIRONMENT INFO
+# ============================================
+info:
+  app:
+    name: ${spring.application.name}
+    description: "Eureka Discovery Server - Sistema Hospitalario"
+    version: "1.0.0"
+    environment: "railway-production"
+  java:
+    version: ${java.version}
+  railway:
+    service: "eureka-server"
+    deployment-url: ${RAILWAY_PUBLIC_DOMAIN:not-set}
+
+# ============================================
+# 🔧 OPTIMIZACIONES ADICIONALES RAILWAY
+# ============================================
+
+# Para mejores logs en Railway
+debug: false
+
+# Configuración de timezone
+spring:
+  jackson:
+    time-zone: America/Lima
