@@ -8,21 +8,21 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="microservicios-listas" />
-        <module name="commons-alumnos" />
         <module name="microservicios-gateway" />
         <module name="microservicios-orden" />
-        <module name="commons-microservicios" />
         <module name="microservicios-test" />
         <module name="microservicios-eureka" />
         <module name="microservicios-usuarios" />
         <module name="microservicios-receta" />
-        <module name="commons-examenes" />
         <module name="microservicios-notas" />
         <module name="microservicios-catalogos" />
         <module name="microservicios-oauth2" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="commons-alumnos" target="12" />
+      <module name="commons-examenes" target="12" />
+      <module name="commons-microservicios" target="12" />
       <module name="microservicios-cursos" target="12" />
       <module name="microservicios-examenes" target="12" />
       <module name="microservicios-respuestas" target="12" />

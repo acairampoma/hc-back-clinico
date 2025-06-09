@@ -26,7 +26,7 @@ public interface HospitalizacionNotaRepository extends JpaRepository<Hospitaliza
             "FROM hospitalizacion_notas " +
             "WHERE hospitalizacion_id = :hospitalizacionId " +
             "AND creado_por = :medicoId " +
-            "AND estado = '01'",
+            "AND estado = '06'",
             nativeQuery = true)
     boolean puedeCrearNota(@Param("hospitalizacionId") Long hospitalizacionId,
                            @Param("medicoId") Long medicoId);

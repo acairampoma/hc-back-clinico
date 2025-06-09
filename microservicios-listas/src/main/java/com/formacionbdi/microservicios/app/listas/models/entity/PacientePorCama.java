@@ -6,11 +6,11 @@ import lombok.AllArgsConstructor;
 
 import javax.persistence.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Entidad que mapea la vista vista_pacientes_por_cama
  * Representa la información de pacientes asignados a camas
+ * REFACTORIZADA: Incluye campos necesarios para notas médicas
  */
 @Entity
 @Table(name = "vista_pacientes_por_cama")
@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class PacientePorCama {
 
     /**
-     * Código de la cama (bed_number)
+     * Código de la cama (bed_number) - Clave primaria
      */
     @Id
     @Column(name = "bed_number")
@@ -30,6 +30,7 @@ public class PacientePorCama {
     /**
      * Datos completos del paciente en formato JSON
      * Si la cama está vacía, este campo será null
+     * INCLUYE: hospitalizacion_id, numero_cuenta, paciente_id, etc.
      */
     @Column(name = "patient_data", columnDefinition = "jsonb")
     @JsonProperty("patient_data")
@@ -47,7 +48,9 @@ public class PacientePorCama {
      * Verifica si la cama está ocupada
      */
     public boolean isOccupied() {
-        return this.patientData != null && !this.patientData.trim().isEmpty();
+        return this.patientData != null &&
+                !this.patientData.trim().isEmpty() &&
+                !"null".equals(this.patientData.trim());
     }
 
     /**
@@ -55,5 +58,12 @@ public class PacientePorCama {
      */
     public boolean isAvailable() {
         return !isOccupied();
+    }
+
+    /**
+     * Obtiene descripción del estado de la cama
+     */
+    public String getEstadoDescripcion() {
+        return isOccupied() ? "OCUPADA" : "DISPONIBLE";
     }
 }

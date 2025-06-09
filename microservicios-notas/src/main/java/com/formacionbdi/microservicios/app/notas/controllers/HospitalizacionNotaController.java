@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 @RequestMapping("/notas")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class HospitalizacionNotaController {
 
     private final HospitalizacionNotaService notaService;

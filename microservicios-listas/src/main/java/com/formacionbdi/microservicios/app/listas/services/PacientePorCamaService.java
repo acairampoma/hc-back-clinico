@@ -6,8 +6,13 @@ import java.util.Map;
 
 /**
  * Interface del servicio para gestión de pacientes por cama
+ * AGREGADOS: Métodos para notas médicas
  */
 public interface PacientePorCamaService {
+
+    // ===============================================
+    // MÉTODOS EXISTENTES (SIN CAMBIOS)
+    // ===============================================
 
     /**
      * Obtiene todas las camas con información de pacientes
@@ -104,4 +109,51 @@ public interface PacientePorCamaService {
      * @return Lista de camas que cumplan los filtros
      */
     List<PacientePorCamaDTO> buscarConFiltros(Map<String, Object> filtros);
+
+    // ===============================================
+    // MÉTODOS NUEVOS PARA NOTAS MÉDICAS
+    // ===============================================
+
+    /**
+     * Obtiene datos específicos para crear notas médicas de una cama
+     * @param bedNumber Número de la cama
+     * @return Mapa con datos necesarios para notas médicas
+     */
+    Map<String, Object> obtenerDatosParaNotasMedicas(String bedNumber);
+
+    /**
+     * Busca paciente por hospitalización ID (para notas médicas)
+     * @param hospitalizacionId ID de la hospitalización
+     * @return Información de la cama del paciente
+     * @throws ResourceNotFoundException si no se encuentra
+     */
+    PacientePorCamaDTO buscarPacientePorHospitalizacionId(Long hospitalizacionId);
+
+    /**
+     * Busca paciente por número de cuenta (para notas médicas)
+     * @param numeroCuenta Número de cuenta de la hospitalización
+     * @return Información de la cama del paciente
+     * @throws ResourceNotFoundException si no se encuentra
+     */
+    PacientePorCamaDTO buscarPacientePorNumeroCuenta(String numeroCuenta);
+
+    /**
+     * Verifica si un paciente tiene notas médicas pendientes
+     * @param bedNumber Número de la cama
+     * @return true si tiene notas pendientes, false si no
+     */
+    boolean tieneNotasPendientes(String bedNumber);
+
+    /**
+     * Obtiene estadísticas de pacientes por especialidad
+     * @return Mapa con estadísticas por especialidad
+     */
+    Map<String, Object> obtenerEstadisticasPorEspecialidad();
+
+    /**
+     * Cuenta pacientes por especialidad específica
+     * @param especialidad Nombre de la especialidad
+     * @return Número de pacientes en esa especialidad
+     */
+    Long contarPacientesPorEspecialidad(String especialidad);
 }

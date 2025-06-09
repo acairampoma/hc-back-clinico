@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 /**
  * Implementación del servicio para gestión de pacientes por cama
+ * REFACTORIZADA: Incluye métodos para notas médicas
  */
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,10 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
 
     private final PacientePorCamaRepository repository;
     private final ObjectMapper objectMapper;
+
+    // ===============================================
+    // MÉTODOS BÁSICOS EXISTENTES
+    // ===============================================
 
     @Override
     public List<PacientePorCamaDTO> obtenerTodasLasCamas() {
@@ -87,8 +92,6 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
 
         try {
             log.info("Buscando cama por número: {}", bedNumber);
-
-            // CORREGIDO: Ahora el repository devuelve List<Object[]>
             List<Object[]> resultados = repository.obtenerCamaPorNumero(bedNumber.trim());
 
             if (resultados.isEmpty()) {
@@ -96,10 +99,7 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
                 throw new ResourceNotFoundException("No se encontró la cama con número: " + bedNumber);
             }
 
-            // Tomar el primer resultado de la lista
             Object[] primerResultado = resultados.get(0);
-            log.debug("Resultado obtenido: array de {} elementos", primerResultado.length);
-
             PacientePorCamaDTO cama = convertirResultadoADTO(primerResultado);
             log.info("Cama {} encontrada exitosamente", bedNumber);
             return cama;
@@ -140,8 +140,6 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
 
         try {
             log.info("Buscando paciente por DNI: {}", dni);
-
-            // CORREGIDO: Ahora el repository devuelve List<Object[]>
             List<Object[]> resultados = repository.buscarPacientePorDni(dni.trim());
 
             if (resultados.isEmpty()) {
@@ -149,7 +147,6 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
                 throw new ResourceNotFoundException("No se encontró paciente con DNI: " + dni);
             }
 
-            // Tomar el primer resultado
             Object[] primerResultado = resultados.get(0);
             PacientePorCamaDTO paciente = convertirResultadoADTO(primerResultado);
             log.info("Paciente con DNI {} encontrado en cama {}", dni, paciente.getBedNumber());
@@ -202,6 +199,176 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
             throw new EstructuraHospitalException("Error al buscar pacientes por médico: " + medico);
         }
     }
+
+    // ===============================================
+    // MÉTODOS NUEVOS PARA NOTAS MÉDICAS
+    // ===============================================
+
+    @Override
+    public Map<String, Object> obtenerDatosParaNotasMedicas(String bedNumber) {
+        if (bedNumber == null || bedNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("El número de cama no puede estar vacío");
+        }
+
+        try {
+            log.info("Obteniendo datos para notas médicas de cama: {}", bedNumber);
+            List<Object[]> resultados = repository.obtenerDatosNotasMedicas(bedNumber.trim());
+
+            if (resultados.isEmpty()) {
+                log.warn("No se encontraron datos para notas médicas en cama: {}", bedNumber);
+                throw new ResourceNotFoundException("No se encontró paciente en la cama: " + bedNumber);
+            }
+
+            Object[] datos = resultados.get(0);
+            Map<String, Object> datosNotas = new HashMap<>();
+
+            // Mapear los datos del array a un Map
+            datosNotas.put("bed_number", datos[0]);
+            datosNotas.put("hospitalizacion_id", datos[1] != null ? Long.valueOf(datos[1].toString()) : null);
+            datosNotas.put("numero_cuenta", datos[2]);
+            datosNotas.put("paciente_id", datos[3] != null ? Long.valueOf(datos[3].toString()) : null);
+            datosNotas.put("medico_tratante_id", datos[4] != null ? Long.valueOf(datos[4].toString()) : null);
+            datosNotas.put("especialidad_id", datos[5] != null ? Long.valueOf(datos[5].toString()) : null);
+            datosNotas.put("fullname", datos[6]);
+            datosNotas.put("primary_diagnosis", datos[7]);
+
+            log.info("Datos para notas médicas obtenidos exitosamente para cama: {}", bedNumber);
+            return datosNotas;
+
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error al obtener datos para notas médicas de cama {}: {}", bedNumber, e.getMessage(), e);
+            throw new EstructuraHospitalException("Error al obtener datos para notas médicas");
+        }
+    }
+
+    @Override
+    public PacientePorCamaDTO buscarPacientePorHospitalizacionId(Long hospitalizacionId) {
+        if (hospitalizacionId == null) {
+            throw new IllegalArgumentException("El ID de hospitalización no puede ser nulo");
+        }
+
+        try {
+            log.info("Buscando paciente por hospitalización ID: {}", hospitalizacionId);
+            List<Object[]> resultados = repository.buscarPacientePorHospitalizacionId(hospitalizacionId);
+
+            if (resultados.isEmpty()) {
+                log.warn("No se encontró paciente con hospitalización ID: {}", hospitalizacionId);
+                throw new ResourceNotFoundException("No se encontró paciente con hospitalización ID: " + hospitalizacionId);
+            }
+
+            Object[] primerResultado = resultados.get(0);
+            PacientePorCamaDTO paciente = convertirResultadoADTO(primerResultado);
+            log.info("Paciente con hospitalización ID {} encontrado en cama {}", hospitalizacionId, paciente.getBedNumber());
+            return paciente;
+
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error al buscar paciente con hospitalización ID {}: {}", hospitalizacionId, e.getMessage(), e);
+            throw new EstructuraHospitalException("Error al buscar paciente con hospitalización ID: " + hospitalizacionId);
+        }
+    }
+
+    @Override
+    public PacientePorCamaDTO buscarPacientePorNumeroCuenta(String numeroCuenta) {
+        if (numeroCuenta == null || numeroCuenta.trim().isEmpty()) {
+            throw new IllegalArgumentException("El número de cuenta no puede estar vacío");
+        }
+
+        try {
+            log.info("Buscando paciente por número de cuenta: {}", numeroCuenta);
+            List<Object[]> resultados = repository.buscarPacientePorNumeroCuenta(numeroCuenta.trim());
+
+            if (resultados.isEmpty()) {
+                log.warn("No se encontró paciente con número de cuenta: {}", numeroCuenta);
+                throw new ResourceNotFoundException("No se encontró paciente con número de cuenta: " + numeroCuenta);
+            }
+
+            Object[] primerResultado = resultados.get(0);
+            PacientePorCamaDTO paciente = convertirResultadoADTO(primerResultado);
+            log.info("Paciente con número de cuenta {} encontrado en cama {}", numeroCuenta, paciente.getBedNumber());
+            return paciente;
+
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error al buscar paciente con número de cuenta {}: {}", numeroCuenta, e.getMessage(), e);
+            throw new EstructuraHospitalException("Error al buscar paciente con número de cuenta: " + numeroCuenta);
+        }
+    }
+
+    @Override
+    public boolean tieneNotasPendientes(String bedNumber) {
+        if (bedNumber == null || bedNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("El número de cama no puede estar vacío");
+        }
+
+        try {
+            log.info("Verificando notas pendientes para cama: {}", bedNumber);
+            Optional<Boolean> resultado = repository.tieneNotasPendientes(bedNumber.trim());
+
+            boolean tieneNotas = resultado.orElse(false);
+            log.info("Cama {} {} notas médicas pendientes", bedNumber, tieneNotas ? "tiene" : "no tiene");
+            return tieneNotas;
+
+        } catch (Exception e) {
+            log.error("Error al verificar notas pendientes para cama {}: {}", bedNumber, e.getMessage(), e);
+            // En caso de error, devolver false por seguridad
+            return false;
+        }
+    }
+
+    @Override
+    public Map<String, Object> obtenerEstadisticasPorEspecialidad() {
+        try {
+            log.info("Obteniendo estadísticas por especialidad");
+            List<Object[]> resultados = repository.obtenerEstadisticasPorEspecialidad();
+
+            Map<String, Object> estadisticas = new HashMap<>();
+            List<Map<String, Object>> especialidades = new ArrayList<>();
+
+            for (Object[] resultado : resultados) {
+                Map<String, Object> especialidad = new HashMap<>();
+                especialidad.put("nombre", resultado[0]);
+                especialidad.put("total_pacientes", ((Number) resultado[1]).longValue());
+                especialidades.add(especialidad);
+            }
+
+            estadisticas.put("especialidades", especialidades);
+            estadisticas.put("total_especialidades", especialidades.size());
+
+            log.info("Se obtuvieron estadísticas de {} especialidades", especialidades.size());
+            return estadisticas;
+
+        } catch (Exception e) {
+            log.error("Error al obtener estadísticas por especialidad: {}", e.getMessage(), e);
+            throw new EstructuraHospitalException("Error al obtener estadísticas por especialidad");
+        }
+    }
+
+    @Override
+    public Long contarPacientesPorEspecialidad(String especialidad) {
+        if (especialidad == null || especialidad.trim().isEmpty()) {
+            throw new IllegalArgumentException("La especialidad no puede estar vacía");
+        }
+
+        try {
+            log.info("Contando pacientes por especialidad: {}", especialidad);
+            Long count = repository.contarPacientesPorEspecialidad(especialidad.trim());
+            log.info("Se encontraron {} pacientes en especialidad: {}", count, especialidad);
+            return count;
+
+        } catch (Exception e) {
+            log.error("Error al contar pacientes por especialidad {}: {}", especialidad, e.getMessage(), e);
+            throw new EstructuraHospitalException("Error al contar pacientes por especialidad: " + especialidad);
+        }
+    }
+
+    // ===============================================
+    // MÉTODOS DE ESTADÍSTICAS EXISTENTES
+    // ===============================================
 
     @Override
     public Map<String, Object> obtenerEstadisticasOcupacion() {
@@ -342,6 +509,10 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
         }
     }
 
+    // ===============================================
+    // MÉTODOS PRIVADOS DE UTILIDAD
+    // ===============================================
+
     /**
      * Convierte una lista de resultados Object[] a DTOs
      */
@@ -356,21 +527,11 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
      */
     private PacientePorCamaDTO convertirResultadoADTO(Object[] resultado) {
         try {
-            // Validar que el resultado tenga al menos un elemento
             if (resultado == null || resultado.length == 0) {
                 throw new IllegalArgumentException("Resultado inválido: array vacío o null");
             }
 
             log.debug("Procesando resultado con {} elementos", resultado.length);
-            log.debug("Elemento 0 tipo: {}, valor: {}",
-                    resultado[0] != null ? resultado[0].getClass().getSimpleName() : "null",
-                    resultado[0]);
-
-            if (resultado.length > 1) {
-                log.debug("Elemento 1 tipo: {}, valor: {}",
-                        resultado[1] != null ? resultado[1].getClass().getSimpleName() : "null",
-                        resultado[1]);
-            }
 
             String bedNumber = null;
             String patientDataJson = null;
@@ -391,14 +552,13 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
             // Si hay datos del paciente, convertir JSON a objeto
             if (patientDataJson != null && !patientDataJson.trim().isEmpty() && !"null".equals(patientDataJson)) {
                 try {
-                    log.debug("Parseando JSON: {}", patientDataJson.substring(0, Math.min(100, patientDataJson.length())));
+                    log.debug("Parseando JSON para cama: {}", bedNumber);
                     PacientePorCamaDTO.PatientData patientData = objectMapper.readValue(
                             patientDataJson, PacientePorCamaDTO.PatientData.class);
                     dto.setPatientData(patientData);
-                    log.debug("JSON parseado exitosamente");
+                    log.debug("JSON parseado exitosamente para cama: {}", bedNumber);
                 } catch (Exception jsonException) {
                     log.warn("Error al parsear JSON de paciente para cama {}: {}", bedNumber, jsonException.getMessage());
-                    // En caso de error de JSON, dejar patientData como null
                     dto.setPatientData(null);
                 }
             } else {
