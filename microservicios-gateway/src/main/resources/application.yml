@@ -118,12 +118,12 @@ spring:
           jwk-set-uri: http://localhost:8082/auth/.well-known/jwks.json
 
 server:
-  port: 8090
+  port: ${PORT:8090}
 
 eureka:
   client:
     service-url:
-      default-zone: http://localhost:8761/eureka/
+      default-zone: https://spring-cloud-netflix-eureka-production-5bb2.up.railway.app/eureka
     register-with-eureka: true
     fetch-registry: true
   instance:
