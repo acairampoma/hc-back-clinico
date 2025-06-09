@@ -1,15 +1,16 @@
-# 🔍 APPLICATION-RAILWAY.YML
+# 🔍 APPLICATION-RAILWAY.YML CORREGIDO
 # Ubicación: /microservicios-eureka/src/main/resources/application-railway.yml
 
 # ============================================
-# 🚀 RAILWAY DEPLOYMENT CONFIGURATION
-# Este archivo SOBRESCRIBE application.yml cuando usamos profile=railway
+# 🚀 UNA SOLA SECCIÓN SPRING (FUSIONADA)
 # ============================================
 
 spring:
   application:
     name: microservicio-eureka-server
-  # No incluimos spring.security.basic porque está deprecado
+  # Configuración de timezone
+  jackson:
+    time-zone: America/Lima
 
 server:
   port: ${PORT:8761}  # Railway asigna PORT automáticamente
@@ -88,14 +89,5 @@ info:
     service: "eureka-server"
     deployment-url: ${RAILWAY_PUBLIC_DOMAIN:not-set}
 
-# ============================================
-# 🔧 OPTIMIZACIONES ADICIONALES RAILWAY
-# ============================================
-
 # Para mejores logs en Railway
 debug: false
-
-# Configuración de timezone
-spring:
-  jackson:
-    time-zone: America/Lima
