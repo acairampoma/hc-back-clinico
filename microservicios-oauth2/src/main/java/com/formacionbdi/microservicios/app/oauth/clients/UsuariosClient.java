@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
  */
 @FeignClient(
         name = "MICROSERVICIO-USUARIOS", // Nombre EN MAYÚSCULAS como aparece en Eureka
-        path = "" // Sin path base
+        url = "https://vivacious-benevolence-production.up.railway.app"
 )
 public interface UsuariosClient {
 
