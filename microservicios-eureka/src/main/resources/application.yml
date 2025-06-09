@@ -1,6 +1,9 @@
 spring:
   application:
     name: microservicio-eureka-server
+  security:
+    basic:
+      enabled: false
 
 server:
   port: ${PORT:8761}
@@ -9,3 +12,10 @@ eureka:
   client:
     register-with-eureka: false
     fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname:localhost}:${server.port}/eureka/
+  server:
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 5000
+  instance:
+    hostname: ${RAILWAY_PUBLIC_DOMAIN:localhost}
