@@ -1,14 +1,44 @@
-# Use the Eclipse temurin alpine official image
-FROM eclipse-temurin:17-jdk-alpine
+# 🚪 DOCKERFILE GATEWAY - DENTRO DEL MICROSERVICIO
+FROM eclipse-temurin:11-jdk-alpine AS builder
 
-# Create and change to the app directory.
+# Instalar Maven
+RUN apk add --no-cache maven
+
+# Crear directorio de trabajo
 WORKDIR /app
 
-# Copy local code to the container image.
-COPY microservicios-gateway/ ./
+# Copiar pom.xml (está en el mismo directorio)
+COPY pom.xml .
 
-# Build the app.
-RUN ./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install
+# Descargar dependencias
+RUN mvn dependency:go-offline -B
 
-# Run the app by dynamically finding the JAR file in the target directory
-CMD ["sh", "-c", "java -jar target/*.jar"]
+# Copiar código fuente (está en el mismo directorio)
+COPY src ./src
+
+# Compilar Gateway
+RUN mvn clean package -DskipTests -Dspring.profiles.active=railway
+
+# ============================================
+# STAGE 2: RUNTIME
+# ============================================
+FROM eclipse-temurin:11-jre-alpine
+
+# Usuario no-root
+RUN addgroup -g 1001 -S gateway && \
+    adduser -S gateway -u 1001 -G gateway
+
+WORKDIR /app
+
+# Copiar JAR compilado
+COPY --from=builder /app/target/*.jar app.jar
+
+RUN chown gateway:gateway app.jar
+USER gateway
+
+EXPOSE 8090
+
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC" \
+    SPRING_PROFILES_ACTIVE=railway
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
