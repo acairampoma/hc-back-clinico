@@ -50,12 +50,11 @@ eureka:
 feign:
   client:
     config:
-      MICROSERVICIO-USUARIOS:  # Nombre en mayúsculas
+      MICROSERVICIO-USUARIOS:
+        url: https://vivacious-benevolence-production.up.railway.app  # ← AGREGAR ESTA LÍNEA
         loggerLevel: full
         connectTimeout: 5000
         readTimeout: 10000
-        # URL del servicio usuarios en Railway
-        url: ${USUARIOS_SERVICE_URL:https://vivacious-benevolence-production.up.railway.app}
 
 # ============================================
 # 📊 ACTUATOR & MONITORING
