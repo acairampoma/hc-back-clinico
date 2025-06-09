@@ -150,7 +150,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,info,gateway,routes,env"  # ✅ Específico en lugar de "*"
+        include: "*" # ✅ Específico en lugar de "*"
   endpoint:
     health:
       show-details: always
