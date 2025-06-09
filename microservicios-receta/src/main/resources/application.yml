@@ -2,9 +2,9 @@ spring:
   application:
     name: microservicio-receta
   datasource:
-    url: jdbc:postgresql://localhost:5432/bd_hdigital
+    url: jdbc:postgresql://switchback.proxy.rlwy.net:43095/railway
     username: postgres
-    password: 123456
+    password: QzlJMZtbYmqOxVSspnQAICcTDjkgOqMG
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
