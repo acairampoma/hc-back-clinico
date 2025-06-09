@@ -123,7 +123,7 @@ server:
 eureka:
   client:
     service-url:
-      default-zone: https://spring-cloud-netflix-eureka-production-5bb2.up.railway.app/eureka
+      defaultZone: https://spring-cloud-netflix-eureka-production-5bb2.up.railway.app/eureka
     register-with-eureka: true
     fetch-registry: true
   instance:
