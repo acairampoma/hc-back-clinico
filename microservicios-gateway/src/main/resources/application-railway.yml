@@ -133,7 +133,7 @@ eureka:
   client:
     service-url:
       # ✅ ACTUALIZADO: Usar NUESTRO Eureka deployado
-      defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app}
+      defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
     register-with-eureka: true
     fetch-registry: true
     registry-fetch-interval-seconds: 30
