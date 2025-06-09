@@ -1,14 +1,14 @@
-# Use Eclipse Temurin 11 (tu versión)
-FROM eclipse-temurin:11-jdk-alpine
+# Use the Eclipse temurin alpine official image
+FROM eclipse-temurin:17-jdk-alpine
 
-# Workdir
+# Create and change to the app directory.
 WORKDIR /app
 
-# Copiar solo el microservicio gateway
+# Copy local code to the container image.
 COPY microservicios-gateway/ ./
 
-# Build con Maven wrapper
-RUN chmod +x ./mvnw && ./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install
+# Build the app.
+RUN ./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install
 
-# Ejecutar dinámicamente
+# Run the app by dynamically finding the JAR file in the target directory
 CMD ["sh", "-c", "java -jar target/*.jar"]
