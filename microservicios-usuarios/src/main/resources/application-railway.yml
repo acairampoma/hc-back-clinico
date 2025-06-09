@@ -10,9 +10,7 @@ spring:
     name: microservicio-usuarios
   # PostgreSQL Railway - usando variables de entorno
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/hospital}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
+    url: ${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
