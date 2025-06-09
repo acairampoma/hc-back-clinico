@@ -1,24 +1,21 @@
-# MULTISTAGE BUILD - Compilar + Ejecutar
-FROM maven:3.8.6-openjdk-11 AS build
-WORKDIR /app
-
-# Copiar solo el microservicio Gateway
-COPY microservicios-gateway/pom.xml ./
-COPY microservicios-gateway/src ./src
-
-# Compilar la aplicación
-RUN mvn clean package -DskipTests
-
-# STAGE 2 - Runtime
 FROM openjdk:11-jre-slim
+
+# Variables
+ENV PORT=8080
+ENV JAVA_OPTS="-Xmx256m -Xms128m"
+
+# Crear app user
+RUN addgroup --system spring && adduser --system spring --ingroup spring
+USER spring:spring
+
+# Workdir
 WORKDIR /app
 
-# Copiar el JAR compilado del stage anterior
-COPY --from=build /app/target/*.jar app.jar
+# Esperar que el JAR esté pre-compilado
+COPY microservicios-gateway/target/*.jar app.jar
 
-# Configuración para Railway
-EXPOSE ${PORT:-8080}
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
+# Exponer puerto
+EXPOSE $PORT
 
-# Comando de inicio
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Comando simple
+CMD ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
