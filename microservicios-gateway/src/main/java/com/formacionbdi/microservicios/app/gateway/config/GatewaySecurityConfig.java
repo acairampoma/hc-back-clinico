@@ -15,9 +15,8 @@ public class GatewaySecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(GatewaySecurityConfig.class);
 
-    @Value("${oauth2.jwk-set-uri:http://localhost:8082/auth/.well-known/jwks.json}")
+    @Value("${OAUTH2_JWK_URI:https://brilliant-bravery-production.up.railway.app/auth/.well-known/jwks.json}")
     private String jwkSetUri;
-
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         log.info("Configuring Security Filter Chain WITH OPTIONS support");
