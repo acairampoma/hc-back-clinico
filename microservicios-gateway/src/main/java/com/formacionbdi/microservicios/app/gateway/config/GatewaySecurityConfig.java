@@ -22,7 +22,7 @@ public class GatewaySecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .anyExchange().permitAll()  // ← TEMPORAL: ABRIR TODO
+                        .anyExchange().permitAll()  // ← TEMPORAL: ABRIR TODAS LAS RUTAS
                 )
                 .build();
     }
