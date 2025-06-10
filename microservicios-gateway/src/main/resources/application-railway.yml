@@ -1,15 +1,29 @@
+# 🔧 GATEWAY APPLICATION-RAILWAY.YML - EUREKA DISCOVERY FIX
 spring:
   application:
     name: microservicio-gateway
   cloud:
     gateway:
+      discovery:
+        locator:
+          enabled: true  # ✅ HABILITA DESCUBRIMIENTO AUTOMÁTICO
+          lower-case-service-id: true
       routes:
+        # OAuth2 - USA EUREKA DISCOVERY
         - id: microservicio-oauth2
-          uri: lb://microservicio-oauth2
+          uri: lb://microservicio-oauth2  # ✅ lb:// = EUREKA LOAD BALANCER
           predicates:
             - Path=/oauth2/**
           filters:
             - RewritePath=/oauth2/(?<path>.*), /auth/oauth2/$\{path}
+
+        # Usuarios - USA EUREKA DISCOVERY
+        - id: microservicio-usuarios
+          uri: lb://microservicio-usuarios  # ✅ lb:// = EUREKA LOAD BALANCER
+          predicates:
+            - Path=/api/usuarios/**
+          filters:
+            - StripPrefix=2
 
 eureka:
   client:
@@ -17,17 +31,17 @@ eureka:
       defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
     register-with-eureka: true
     fetch-registry: true
-    # QUITAR TODAS LAS CONFIGURACIONES COMPLEJAS
   instance:
-    prefer-ip-address: false
+    prefer-ip-address: false  # ✅ CRUCIAL - USA HOSTNAME, NO IP
+    hostname: ${RAILWAY_PUBLIC_DOMAIN:microservicio-gateway}  # ✅ RAILWAY HOSTNAME
+    non-secure-port: ${PORT:8090}
+    instance-id: ${spring.application.name}:${RAILWAY_REPLICA_ID:${random.value}}
 
 server:
-  port: 8090
+  port: ${PORT:8090}
 
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-
-# QUITAR RIBBON - usar Spring Cloud LoadBalancer por defecto
