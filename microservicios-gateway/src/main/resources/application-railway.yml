@@ -147,13 +147,15 @@ eureka:
 
 # 📊 MANAGEMENT
 management:
+  endpoint:
+    gateway:
+      enabled: true  # ← AGREGAR ESTA SECCIÓN
+    health:
+      show-details: always
   endpoints:
     web:
       exposure:
-        include: "*" # ✅ Específico en lugar de "*"
-  endpoint:
-    health:
-      show-details: always
+        include: "*"
 
 # 🔐 OAUTH2 CONFIG
 oauth2:
