@@ -27,7 +27,7 @@ server:
 eureka:
   instance:
     instance-id: ${spring.application.name}:${RAILWAY_REPLICA_ID:${random.value}}
-    hostname: ${RAILWAY_PUBLIC_DOMAIN:oauth2.railway.internal}
+    hostname: brilliant-bravery
     prefer-ip-address: false
     lease-renewal-interval-in-seconds: 30
     lease-expiration-duration-in-seconds: 90
