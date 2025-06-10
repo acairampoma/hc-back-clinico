@@ -17,18 +17,17 @@ eureka:
       defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
     register-with-eureka: true
     fetch-registry: true
-    healthcheck:
-      enabled: false  # ← CRITICAL para Railway
-    eureka-connection-idle-timeout-seconds: 30  # ← AWS/Railway recomendado
-    eureka-server-read-timeout-seconds: 8
-    eureka-server-connect-timeout-seconds: 5
+    # QUITAR TODAS LAS CONFIGURACIONES COMPLEJAS
   instance:
-    lease-renewal-interval-in-seconds: 10  # Más frecuente
-    lease-expiration-duration-in-seconds: 30
+    prefer-ip-address: false
 
-# RIBBON TIMEOUTS para Railway
-ribbon:
-  ConnectTimeout: 3000
-  ReadTimeout: 10000
-  MaxAutoRetries: 1
-  MaxAutoRetriesNextServer: 1
+server:
+  port: 8090
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+# QUITAR RIBBON - usar Spring Cloud LoadBalancer por defecto
