@@ -1,7 +1,24 @@
-# YAML SIMPLE - SIN EXCLUSIONES
 spring:
   application:
     name: microservicio-gateway
+  cloud:
+    gateway:
+      routes:
+        # OAuth2 - PÚBLICO
+        - id: microservicio-oauth2
+          uri: https://brilliant-bravery-production.up.railway.app
+          predicates:
+            - Path=/oauth2/**
+          filters:
+            - RewritePath=/oauth2/(?<path>.*), /auth/oauth2/$\{path}
+
+        # Usuarios - PROTEGIDO
+        - id: microservicio-usuarios
+          uri: https://vivacious-benevolence-production.up.railway.app
+          predicates:
+            - Path=/api/usuarios/**
+          filters:
+            - StripPrefix=2
 
 server:
   port: 8090
