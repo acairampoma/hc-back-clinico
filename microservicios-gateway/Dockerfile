@@ -1,4 +1,4 @@
-# 🚪 DOCKERFILE GATEWAY - DENTRO DEL MICROSERVICIO
+# 🚪 DOCKERFILE GATEWAY - CORREGIDO
 FROM eclipse-temurin:11-jdk-alpine AS builder
 
 # Instalar Maven
@@ -16,8 +16,8 @@ RUN mvn dependency:go-offline -B
 # Copiar código fuente (está en el mismo directorio)
 COPY src ./src
 
-# Compilar Gateway
-RUN mvn clean package -DskipTests -Dspring.profiles.active=railway
+# Compilar Gateway SIN profile específico (deja que runtime lo maneje)
+RUN mvn clean package -DskipTests
 
 # ============================================
 # STAGE 2: RUNTIME
@@ -38,7 +38,9 @@ USER gateway
 
 EXPOSE 8090
 
+# Variables de entorno
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC" \
     SPRING_PROFILES_ACTIVE=railway
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Entrypoint con profile activo
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar"]
