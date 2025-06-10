@@ -4,27 +4,16 @@ spring:
   cloud:
     gateway:
       routes:
-        # OAuth2 - PÚBLICO
         - id: microservicio-oauth2
-          uri: https://brilliant-bravery-production.up.railway.app
+          uri: lb://microservicio-oauth2  # ← LB VIA EUREKA
           predicates:
             - Path=/oauth2/**
           filters:
             - RewritePath=/oauth2/(?<path>.*), /auth/oauth2/$\{path}
 
-        # Usuarios - PROTEGIDO
-        - id: microservicio-usuarios
-          uri: https://vivacious-benevolence-production.up.railway.app
-          predicates:
-            - Path=/api/usuarios/**
-          filters:
-            - StripPrefix=2
-
-server:
-  port: 8090
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
+    register-with-eureka: true
+    fetch-registry: true
