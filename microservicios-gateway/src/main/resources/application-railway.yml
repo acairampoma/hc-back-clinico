@@ -1,24 +1,13 @@
+# YAML SIMPLE - SIN EXCLUSIONES
 spring:
   application:
     name: microservicio-gateway
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      # NO excluir ReactiveSecurityAutoConfiguration - Actuator lo necesita
 
 server:
-  port: ${PORT:8090}
+  port: 8090
 
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-  security:
-    enabled: false
-
-# Deshabilitar security para endpoints específicos
-security:
-  basic:
-    enabled: false
-  ignored: "/**"
