@@ -9,10 +9,10 @@ spring:
     name: microservicio-gateway
   cloud:
     gateway:
-      # ✅ DESCUBRIMIENTO AUTOMÁTICO
+      # ✅ DESCUBRIMIENTO AUTOMÁTICO - DESHABILITADO
       discovery:
         locator:
-          enabled: true
+          enabled: false  # ❌ DESHABILITAR para evitar conflicto de rutas
           lower-case-service-id: true
 
       # ✅ CONFIGURACIÓN DE TIMEOUTS
