@@ -17,14 +17,16 @@ eureka:
       defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
     register-with-eureka: true
     fetch-registry: true
-    registry-fetch-interval-seconds: 30
     healthcheck:
-      enabled: false  # ← DESHABILITAR HEALTHCHECK ESTRICTO
+      enabled: false  # ← CRITICAL para Railway
+    eureka-connection-idle-timeout-seconds: 30  # ← AWS/Railway recomendado
+    eureka-server-read-timeout-seconds: 8
+    eureka-server-connect-timeout-seconds: 5
   instance:
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
+    lease-renewal-interval-in-seconds: 10  # Más frecuente
+    lease-expiration-duration-in-seconds: 30
 
-# TOLERANCIA A FALLOS RIBBON
+# RIBBON TIMEOUTS para Railway
 ribbon:
   ConnectTimeout: 3000
   ReadTimeout: 10000
