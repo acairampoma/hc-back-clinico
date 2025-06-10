@@ -5,7 +5,7 @@ spring:
     gateway:
       routes:
         - id: microservicio-oauth2
-          uri: lb://microservicio-oauth2  # ← LB VIA EUREKA
+          uri: lb://microservicio-oauth2
           predicates:
             - Path=/oauth2/**
           filters:
@@ -17,3 +17,16 @@ eureka:
       defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
     register-with-eureka: true
     fetch-registry: true
+    registry-fetch-interval-seconds: 30
+    healthcheck:
+      enabled: false  # ← DESHABILITAR HEALTHCHECK ESTRICTO
+  instance:
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# TOLERANCIA A FALLOS RIBBON
+ribbon:
+  ConnectTimeout: 3000
+  ReadTimeout: 10000
+  MaxAutoRetries: 1
+  MaxAutoRetriesNextServer: 1
