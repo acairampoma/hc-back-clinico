@@ -19,42 +19,10 @@ public class GatewaySecurityConfig {
     private String jwkSetUri;
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        log.info("Configuring Security Filter Chain WITH OPTIONS support");
-
         return http
-                // ❌ DESHABILITAR CSRF
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-
-                // 🛡️ CONFIGURAR AUTORIZACIÓN
                 .authorizeExchange(exchanges -> exchanges
-                        // ✅ RUTAS PÚBLICAS
-                        .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("/oauth2/**").permitAll()
-                        .pathMatchers("/.well-known/**").permitAll()
-
-                        // 🔧 PERMITIR TODAS LAS REQUESTS OPTIONS (PREFLIGHT)
-                        .pathMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // 🔐 RUTAS PROTEGIDAS
-                        .pathMatchers("/api/usuarios/**").authenticated()
-                        .pathMatchers("/api/listas/**").authenticated()
-                        .pathMatchers("/api/test/**").authenticated()
-                        .pathMatchers("/api/notas/**").authenticated()
-                        .pathMatchers("/api/recetas/**").authenticated()
-                        .pathMatchers("/api/ordenes/**").authenticated()
-                        .pathMatchers("/api/pacientes/**").authenticated()
-                        .pathMatchers("/api/catalogos/**").authenticated()
-
-                        // 🔒 Todo lo demás requiere autenticación
-                        .anyExchange().authenticated()
-                )
-
-                // 🎫 CONFIGURAR OAUTH2 RESOURCE SERVER
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> {
-                            jwt.jwkSetUri(jwkSetUri);
-                            log.debug("JWT configured with JWK Set URI: {}", jwkSetUri);
-                        })
+                        .anyExchange().permitAll()  // ← TEMPORAL: ABRIR TODO
                 )
                 .build();
     }
