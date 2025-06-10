@@ -1,147 +1,89 @@
-# 🔧 GATEWAY APPLICATION-RAILWAY.YML - CONFIGURACIÓN CORREGIDA
+# 🔧 GATEWAY APPLICATION-RAILWAY.YML - CONFIGURACIÓN FUNCIONAL
 # Ubicación: /microservicio-gateway/src/main/resources/application-railway.yml
 
-# ============================================
-# 🚀 SPRING CONFIGURATION
-# ============================================
 spring:
   application:
     name: microservicio-gateway
   cloud:
     gateway:
-      # ✅ DESCUBRIMIENTO AUTOMÁTICO - DESHABILITADO
       discovery:
         locator:
-          enabled: false  # ❌ DESHABILITAR para evitar conflicto de rutas
-          lower-case-service-id: true
+          enabled: false
 
-      # ✅ CONFIGURACIÓN DE TIMEOUTS
-      httpclient:
-        connect-timeout: 10000
-        response-timeout: 30s
-        pool:
-          max-idle-time: 30s
+      # 🌐 CONFIGURACIÓN CORS
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"  # ✅ Para Railway permite todos
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: false  # ✅ false para Railway
 
-      # ✅ RUTAS CORREGIDAS
+      # 🛣️ CONFIGURACIÓN DE RUTAS (IGUAL QUE LOCAL)
       routes:
-        # OAuth2 - RUTA CORREGIDA
+        # OAuth2 - IGUAL QUE TU LOCAL
         - id: microservicio-oauth2
           uri: lb://microservicio-oauth2
           predicates:
             - Path=/oauth2/**
           filters:
-            # ✅ CORREGIDO: /oauth2/password-token -> /auth/oauth2/password-token
             - RewritePath=/oauth2/(?<path>.*), /auth/oauth2/$\{path}
-            - PreserveHostHeader
 
-        # Usuarios - RUTA CORREGIDA
+        # Well-known endpoints
+        - id: microservicio-oauth2-wellknown
+          uri: lb://microservicio-oauth2
+          predicates:
+            - Path=/.well-known/**
+          filters:
+            - PrefixPath=/auth
+
+        # Usuarios - IGUAL QUE TU LOCAL
         - id: microservicio-usuarios
           uri: lb://microservicio-usuarios
           predicates:
             - Path=/api/usuarios/**
           filters:
-            # ✅ CORREGIDO: Solo remueve /api
-            - StripPrefix=1
-            - PreserveHostHeader
+            - StripPrefix=2  # ✅ Como tu local
 
-# ============================================
-# 🔍 EUREKA CLIENT CONFIGURATION - CORREGIDA
-# ============================================
+  # 🔐 SECURITY - CORREGIDO PARA RAILWAY
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://brilliant-bravery-production.up.railway.app:8082/auth/.well-known/jwks.json
+
+server:
+  port: ${PORT}  # ✅ Railway asigna automáticamente
+
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
     register-with-eureka: true
     fetch-registry: true
-    registry-fetch-interval-seconds: 30
-
   instance:
-    prefer-ip-address: false
-    # ✅ CORREGIDO: Usar Railway Public Domain
+    prefer-ip-address: false  # ✅ Cambio para Railway
     hostname: ${RAILWAY_PUBLIC_DOMAIN:respectful-purpose-production.up.railway.app}
-    # ✅ CORREGIDO: Usar PORT sin fallback
     non-secure-port: ${PORT}
     instance-id: ${spring.application.name}:${RAILWAY_REPLICA_ID:${random.value}}
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
-    metadata-map:
-      management.port: ${PORT}
-      railway.deployment: production
-      gateway.version: "1.0.0"
 
-# ============================================
-# 🌐 SERVER CONFIGURATION - CORREGIDA
-# ============================================
-server:
-  # ✅ CORREGIDO: Usar PORT sin fallback
-  port: ${PORT}
-
-# ============================================
-# 📊 ACTUATOR & MONITORING
-# ============================================
 management:
   endpoints:
     web:
       exposure:
-        include: "health,info,env,metrics,gateway"
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: always
-    gateway:
-      enabled: true
-  info:
-    env:
-      enabled: true
+        include: "*"
 
-# ============================================
-# 📝 LOGGING CONFIGURATION
-# ============================================
+# 🔧 OAUTH2 JWK - CORREGIDO PARA RAILWAY
+oauth2:
+  jwk-set-uri: https://brilliant-bravery-production.up.railway.app:8082/auth/.well-known/jwks.json
+
 logging:
   level:
-    root: INFO
-    # Gateway específico
     org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.loadbalancer: DEBUG
-    # Eureka
-    org.springframework.cloud.netflix.eureka: DEBUG
-    com.netflix.eureka: INFO
-    com.netflix.discovery: INFO
-    # Tu paquete específico
-    com.formacionbdi: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{36}] - %msg%n"
-
-# ============================================
-# 🎯 RAILWAY ENVIRONMENT INFO
-# ============================================
-info:
-  app:
-    name: ${spring.application.name}
-    description: "API Gateway - Sistema Hospitalario"
-    version: "1.0.0"
-    environment: "railway-production"
-  java:
-    version: ${java.version}
-  railway:
-    service: "gateway"
-    deployment-url: ${RAILWAY_PUBLIC_DOMAIN:not-set}
-    eureka-server: "hc-back-clinico-production.up.railway.app"
-    oauth2-service: "brilliant-bravery-production.up.railway.app"
-    usuarios-service: "vivacious-benevolence-production.up.railway.app"
-
-# ============================================
-# 🔧 CORS CONFIGURATION (Agregar a la sección spring existente)
-# ============================================
-# NOTA: Agregar globalcors dentro de spring.cloud.gateway existente:
-#
-# spring:
-#   cloud:
-#     gateway:
-#       globalcors:
-#         cors-configurations:
-#           '[/**]':
-#             allowedOrigins: "*"
-#             allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-#             allowedHeaders: "*"
-#             allowCredentials: false
+    org.springframework.web.reactive: DEBUG
+    org.springframework.security: DEBUG
