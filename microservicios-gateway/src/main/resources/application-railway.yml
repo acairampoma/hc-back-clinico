@@ -1,4 +1,4 @@
-# ULTRA MINIMAL CONFIG
+# ULTRA MINIMAL CONFIGasa
 spring:
   application:
     name: microservicio-gateway
