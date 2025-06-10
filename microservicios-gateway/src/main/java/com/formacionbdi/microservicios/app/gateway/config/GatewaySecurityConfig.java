@@ -12,11 +12,6 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @Configuration
 @EnableWebFluxSecurity
 public class GatewaySecurityConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(GatewaySecurityConfig.class);
-
-    @Value("${OAUTH2_JWK_URI:https://brilliant-bravery-production.up.railway.app/auth/.well-known/jwks.json}")
-    private String jwkSetUri;
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http

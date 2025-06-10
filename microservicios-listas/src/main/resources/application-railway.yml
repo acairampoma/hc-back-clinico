@@ -1,0 +1,102 @@
+# 🏥 APPLICATION-RAILWAY.YML LISTAS
+# Ubicación: /microservicios-listas/src/main/resources/application-railway.yml
+
+# ============================================
+# 🚀 RAILWAY LISTAS CONFIGURATION
+# ============================================
+
+spring:
+  application:
+    name: microservicio-listas
+  # PostgreSQL Railway - usando variables de entorno
+  datasource:
+      url: ${DATABASE_URL}
+      driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        format_sql: true
+    show-sql: false
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+
+server:
+  port: ${PORT:8003}  # Railway asigna PORT automáticamente
+
+# ============================================
+# 🔍 EUREKA CLIENT CONFIGURATION
+# ============================================
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${RAILWAY_REPLICA_ID:${random.value}}
+    hostname: ${RAILWAY_PUBLIC_DOMAIN:listas.railway.internal}
+    prefer-ip-address: false
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    # Metadata para Railway
+    metadata-map:
+      management.port: ${PORT:8003}
+      railway.deployment: production
+  client:
+    service-url:
+      # Conexión a nuestro Eureka en Railway
+      defaultZone: ${EUREKA_URI:https://hc-back-clinico-production.up.railway.app/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 30
+
+# ============================================
+# 📊 ACTUATOR & MONITORING
+# ============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,env,metrics"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+# ============================================
+# 📝 LOGGING CONFIGURATION
+# ============================================
+logging:
+  level:
+    root: INFO
+    com.formacionbdi.microservicios.app.listas: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{36}] - %msg%n"
+
+# ============================================
+# 🎯 RAILWAY ENVIRONMENT INFO
+# ============================================
+info:
+  app:
+    name: ${spring.application.name}
+    description: "Microservicio Listas Hospitalarias - Sistema Hospitalario"
+    version: "1.0.0"
+    environment: "railway-production"
+  java:
+    version: ${java.version}
+  railway:
+    service: "listas"
+    deployment-url: ${RAILWAY_PUBLIC_DOMAIN:not-set}
+    database: "postgresql"
+    eureka-server: "hc-back-clinico-production.up.railway.app"
