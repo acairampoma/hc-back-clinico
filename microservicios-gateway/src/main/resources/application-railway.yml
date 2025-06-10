@@ -3,8 +3,8 @@ spring:
     name: microservicio-gateway
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      # NO excluir ReactiveSecurityAutoConfiguration - Actuator lo necesita
 
 server:
   port: ${PORT:8090}
@@ -16,3 +16,9 @@ management:
         include: "*"
   security:
     enabled: false
+
+# Deshabilitar security para endpoints específicos
+security:
+  basic:
+    enabled: false
+  ignored: "/**"
