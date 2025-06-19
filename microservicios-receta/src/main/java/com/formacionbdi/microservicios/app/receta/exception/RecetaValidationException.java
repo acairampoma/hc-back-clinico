@@ -78,4 +78,9 @@ public class RecetaValidationException extends RuntimeException {
         return new RecetaValidationException(campo,
                 String.format("Cantidad inválida: %.2f. Debe ser entre 0.1 y 2.0", valor));
     }
+
+    public static RecetaValidationException jsonInvalido(String campo, String detalleError) {
+        return new RecetaValidationException(campo,
+                String.format("Campo JSON '%s' contiene datos inválidos: %s", campo, detalleError));
+    }
 }

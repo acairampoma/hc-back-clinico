@@ -28,4 +28,5 @@ public interface CatalogosService {
     List<CatalogosDTO> obtenerTodosLosMedicamentos();
     List<String> obtenerTodasLasCategorias();
     List<String> obtenerTiposDeTabla();
+    List<CatalogosDTO> buscarEnTablaEspecifica(String tablaOrigen, String termino);
 }

@@ -19,6 +19,7 @@ import java.util.List;
 
 /**
  * 📋 DTO para Receta Cabecera - Incluye validaciones y reglas de negocio
+ * 🔐 VERSIÓN CORREGIDA: Procesamiento correcto de firma digital del frontend
  */
 @Data
 @NoArgsConstructor
@@ -64,8 +65,16 @@ public class RecetaCabDTO {
     @JsonProperty("indicaciones_generales")
     private String indicacionesGenerales;
 
+    @JsonProperty("observaciones")
+    private String observaciones;
+
     @JsonProperty("estado")
     private String estado; // 01=Activa, 02=Despachada, 03=Vencida, 04=Anulada
+
+    @JsonProperty("activo")
+    private String activo; // S/N
+
+    // ===== 🔐 CAMPOS DE FIRMA DIGITAL =====
 
     @JsonProperty("firmada")
     private String firmada; // S/N
@@ -73,15 +82,27 @@ public class RecetaCabDTO {
     @JsonProperty("fecha_firma")
     private LocalDateTime fechaFirma;
 
-    @JsonProperty("firma_digital")
+    /**
+     * 🎯 CAMPO CRÍTICO: Firma Digital como JsonNode
+     * ✅ Recibe el JSON exacto del frontend con estructura:
+     * {
+     *   "imagen_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...",
+     *   "fecha_firma": "2025-06-15T05:23:19.518Z",
+     *   "metodo": "canvas_signaturePad_directo",
+     *   "version": "corregida_v1"
+     * }
+     */
+    @JsonProperty("firma_digital")  // ← Snake_case como envía el frontend
     private JsonNode firmaDigital;
 
-    // ===== LISTA DE MEDICAMENTOS (CAB+DET) =====
+    // ===== 💊 LISTA DE MEDICAMENTOS (CAB+DET) =====
+
     @Valid
     @JsonProperty("medicamentos")
     private List<RecetaDetDTO> medicamentos;
 
-    // ===== AUDITORÍA =====
+    // ===== 📊 AUDITORÍA =====
+
     @NotNull(message = "Creado por es requerido")
     @JsonProperty("creado_por")
     private Long creadoPor;
@@ -95,54 +116,57 @@ public class RecetaCabDTO {
     @JsonProperty("actualizado_en")
     private LocalDateTime actualizadoEn;
 
-    // ===== MÉTODOS HELPER =====
+    // ===== 🛠️ MÉTODOS HELPER =====
 
     /**
-     * Verifica si la receta está firmada
+     * ✅ Verifica si la receta está firmada
      */
     public boolean estaFirmada() {
         return "S".equals(firmada);
     }
 
     /**
-     * Verifica si es una receta activa
+     * ✅ Verifica si es una receta activa
      */
     public boolean esActiva() {
         return "01".equals(estado);
     }
 
     /**
-     * Verifica si es de hospitalización
+     * ✅ Verifica si es de hospitalización
      */
     public boolean esDeHospitalizacion() {
         return "HOS".equals(tipoOrigen);
     }
 
     /**
-     * Verifica si es de acto médico
+     * ✅ Verifica si es de acto médico
      */
     public boolean esDeActoMedico() {
         return "ACT".equals(tipoOrigen);
     }
 
     /**
-     * Obtiene el total de medicamentos
+     * ✅ Obtiene el total de medicamentos
      */
     public int getTotalMedicamentos() {
         return medicamentos != null ? medicamentos.size() : 0;
     }
 
     /**
-     * Verifica si tiene firma digital válida
+     * 🔐 MÉTODO CORREGIDO: Detecta la firma como la envía el frontend
+     * ✅ ANTES: Buscaba "tiene_firma" (campo de notas médicas)
+     * ✅ AHORA: Busca "imagen_base64" (como envía el frontend de recetas)
      */
     public boolean tieneFirmaDigitalValida() {
         return firmaDigital != null &&
-                firmaDigital.has("tiene_firma") &&
-                firmaDigital.get("tiene_firma").asBoolean();
+                firmaDigital.has("imagen_base64") &&
+                !firmaDigital.get("imagen_base64").asText().trim().isEmpty() &&
+                firmaDigital.get("imagen_base64").asText().length() > 100;
     }
 
     /**
-     * Verifica si puede ser modificada (hasta 24h antes de vencimiento)
+     * ✅ Verifica si puede ser modificada (hasta 24h antes de vencimiento)
      */
     public boolean puedeSerModificada() {
         if (fechaVencimiento == null) return false;
@@ -151,5 +175,89 @@ public class RecetaCabDTO {
         LocalDateTime limite = fechaVencimiento.atStartOfDay().minusHours(24);
 
         return ahora.isBefore(limite) && esActiva();
+    }
+
+    /**
+     * 🆕 MÉTODO PARA DEPURACIÓN: Información detallada de la firma
+     */
+    public String getInfoFirmaDigital() {
+        if (firmaDigital == null) {
+            return "Sin firma digital";
+        }
+
+        StringBuilder info = new StringBuilder();
+
+        // Información de la imagen base64
+        if (firmaDigital.has("imagen_base64")) {
+            int tamaño = firmaDigital.get("imagen_base64").asText().length();
+            info.append("Imagen: ").append(tamaño).append(" caracteres");
+        }
+
+        // Método usado para capturar la firma
+        if (firmaDigital.has("metodo")) {
+            info.append(" | Método: ").append(firmaDigital.get("metodo").asText());
+        }
+
+        // Fecha de la firma
+        if (firmaDigital.has("fecha_firma")) {
+            info.append(" | Fecha: ").append(firmaDigital.get("fecha_firma").asText());
+        }
+
+        // Versión del procesamiento
+        if (firmaDigital.has("version")) {
+            info.append(" | Versión: ").append(firmaDigital.get("version").asText());
+        }
+
+        return info.toString();
+    }
+
+    /**
+     * 🔍 MÉTODO PARA LOGS: Obtiene los primeros caracteres de la imagen base64
+     */
+    public String getPrimeros50CharsImagenBase64() {
+        if (firmaDigital != null && firmaDigital.has("imagen_base64")) {
+            String imagen = firmaDigital.get("imagen_base64").asText();
+            return imagen.length() > 50 ? imagen.substring(0, 50) + "..." : imagen;
+        }
+        return "No disponible";
+    }
+
+    /**
+     * 📏 MÉTODO HELPER: Obtiene el tamaño de la imagen base64
+     */
+    public int getTamanoImagenBase64() {
+        if (firmaDigital != null && firmaDigital.has("imagen_base64")) {
+            return firmaDigital.get("imagen_base64").asText().length();
+        }
+        return 0;
+    }
+
+    /**
+     * 🏥 MÉTODO HELPER: Descripción del tipo de origen
+     */
+    public String getDescripcionTipoOrigen() {
+        if (tipoOrigen == null) return "No definido";
+
+        switch (tipoOrigen) {
+            case "HOS": return "Hospitalización";
+            case "ACT": return "Acto Médico";
+            case "EME": return "Emergencia";
+            default: return "Tipo desconocido: " + tipoOrigen;
+        }
+    }
+
+    /**
+     * 📊 MÉTODO HELPER: Descripción del estado
+     */
+    public String getDescripcionEstado() {
+        if (estado == null) return "No definido";
+
+        switch (estado) {
+            case "01": return "Activa";
+            case "02": return "Despachada";
+            case "03": return "Vencida";
+            case "04": return "Anulada";
+            default: return "Estado desconocido: " + estado;
+        }
     }
 }

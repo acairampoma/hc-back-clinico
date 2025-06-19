@@ -121,6 +121,12 @@ public class CatalogosServiceImpl implements CatalogosService {
         }
     }
 
+    @Override
+    public List<CatalogosDTO> buscarEnTablaEspecifica(String tablaOrigen, String termino) {
+        log.info("🎯 Búsqueda en tabla {} con término: {}", tablaOrigen, termino);
+        return convertirResultados(catalogosRepository.buscarEnTablaEspecifica(tablaOrigen, termino));
+    }
+
 
     private String convertToString(Object obj) {
         if (obj == null) {

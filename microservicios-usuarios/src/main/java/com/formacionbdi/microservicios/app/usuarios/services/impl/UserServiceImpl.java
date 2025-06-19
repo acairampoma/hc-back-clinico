@@ -91,6 +91,7 @@ public class UserServiceImpl implements UserService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .enabled(user.getEnabled())
+                .datosProfesional(user.getDatosProfesional())
                 .roles(user.getRoles() != null ?
                         user.getRoles().stream()
                                 .filter(Objects::nonNull)
@@ -115,7 +116,12 @@ public class UserServiceImpl implements UserService {
         user.setFirstName(userDto.getFirstName());
         user.setLastName(userDto.getLastName());
         user.setEnabled(userDto.getEnabled() != null ? userDto.getEnabled() : true);
+        user.setDatosProfesional(userDto.getDatosProfesional());
 
         return user;
     }
+
+
+
+
 }

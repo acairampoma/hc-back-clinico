@@ -58,6 +58,9 @@ public class User implements Serializable {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
+    @Column(name = "datos_profesional", columnDefinition = "jsonb")
+    private String datosProfesional;
+
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "user_roles",

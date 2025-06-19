@@ -63,6 +63,8 @@ public class CatalogosController {
         return ResponseEntity.ok(ApiResponse.success(medicamentos, "Medicamentos encontrados"));
     }
 
+
+
     @GetMapping("/maestros/buscar")
     public ResponseEntity<ApiResponse<List<CatalogosDTO>>> buscarCatalogos(@RequestParam String q) {
         log.info("📊 REST - Búsqueda catálogos: {}", q);
@@ -132,6 +134,16 @@ public class CatalogosController {
         return ResponseEntity.ok(ApiResponse.success(
                 "Puerto: 8009 - Version: 1.0.0",
                 "Microservicio catálogos funcionando correctamente"));
+    }
+
+    @GetMapping("/tabla/{tablaOrigen}/buscar")
+    public ResponseEntity<ApiResponse<List<CatalogosDTO>>> buscarEnTablaConTermino(
+            @PathVariable String tablaOrigen,
+            @RequestParam String q) {
+        log.info("🔍 REST - Búsqueda en tabla {} con término: {}", tablaOrigen, q);
+
+        List<CatalogosDTO> resultados = catalogosService.buscarEnTablaEspecifica(tablaOrigen, q);
+        return ResponseEntity.ok(ApiResponse.success(resultados, "Búsqueda en tabla completada"));
     }
 
     @GetMapping("/info")

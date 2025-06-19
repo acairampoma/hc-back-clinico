@@ -11,6 +11,7 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
+            allowedOriginPatterns: "*"
             allowedOrigins: "http://localhost:8000"
             allowedMethods:
               - GET
@@ -21,7 +22,7 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
 
-      # 🛣️ CONFIGURACIÓN DE RUTAS - ORDEN IMPORTANTE (más específicas primero)
+      # 🛣️ CONFIGURACIÓN DE RUTAS - CORREGIDO
       routes:
         # OAuth2 Authorization Server
         - id: microservicio-oauth2
@@ -39,13 +40,13 @@ spring:
           filters:
             - PrefixPath=/auth
 
-        # Usuarios con rutas específicas primero
+        # Usuarios - clientes OAuth específicos
         - id: microservicio-usuarios-clients
           uri: lb://microservicio-usuarios
           predicates:
             - Path=/api/usuarios/clients/**
           filters:
-            - StripPrefix=2  # Quita /api/usuarios, deja /clients/**
+            - StripPrefix=2
 
         # Usuarios - ruta general
         - id: microservicio-usuarios
@@ -53,64 +54,65 @@ spring:
           predicates:
             - Path=/api/usuarios/**
           filters:
-            - StripPrefix=2  # Quita /api/usuarios, envía /**
+            - StripPrefix=2
 
-        # Test
+        # Test microservice
         - id: microservicio-test
           uri: lb://microservicio-test
           predicates:
             - Path=/api/test/**
           filters:
-            - StripPrefix=2  # Quita /api/test, envía /**
+            - StripPrefix=2
 
-        # Listas
+        # Listas microservice
         - id: microservicio-listas
           uri: lb://microservicio-listas
           predicates:
             - Path=/api/listas/**
           filters:
-            - StripPrefix=2  # Quita /api/listas, envía /**
+            - StripPrefix=2
 
-        # ✅ PACIENTES - CORREGIDO
+        # Pacientes (usando microservicio-listas)
         - id: microservicio-pacientes
           uri: lb://microservicio-listas
           predicates:
             - Path=/api/pacientes/**
           filters:
-            - StripPrefix=1  # Quita /api, envía /pacientes/** al microservicio
+            - StripPrefix=1
 
-        # Notas
+        # Notas microservice
         - id: microservicio-notas
           uri: lb://microservicio-notas
           predicates:
             - Path=/api/notas/**
           filters:
-            - StripPrefix=1  # Quita /api, envía /notas/**
+            - StripPrefix=1
 
-        # Recetas
+        # Recetas microservice
         - id: microservicio-receta
           uri: lb://microservicio-receta
           predicates:
             - Path=/api/recetas/**
           filters:
-            - StripPrefix=1  # Quita /api, envía /recetas/**
+            - StripPrefix=1
 
-        # Órdenes
+        # Órdenes microservice
         - id: microservicio-orden
           uri: lb://microservicio-orden
           predicates:
             - Path=/api/ordenes/**
           filters:
-            - StripPrefix=1  # Quita /api, envía /ordenes/**
+            - StripPrefix=1
 
-        # Catálogos
+        # Catálogos microservice
         - id: microservicio-catalogos
           uri: lb://microservicio-catalogos
           predicates:
             - Path=/api/catalogos/**
           filters:
-            - StripPrefix=1  # Quita /api, envía /catalogos/**
+            - StripPrefix=1
 
+  # ✨ CONFIGURACIÓN JWT SECURITY
   security:
     oauth2:
       resourceserver:
@@ -123,21 +125,22 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: https://spring-cloud-netflix-eureka-production-5bb2.up.railway.app/eureka
+      default-zone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${random.value}
 
+# ✨ CONFIGURACIÓN JWT PERSONALIZADA
+oauth2:
+  jwk-set-uri: http://localhost:8082/auth/.well-known/jwks.json
+
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-
-oauth2:
-  jwk-set-uri: http://localhost:8082/auth/.well-known/jwks.json
 
 logging:
   level:

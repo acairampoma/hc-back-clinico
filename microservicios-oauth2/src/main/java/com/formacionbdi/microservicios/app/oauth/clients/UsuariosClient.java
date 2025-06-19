@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.PathVariable;
  * Se conecta via Eureka al microservicio-usuarios
  */
 @FeignClient(
-        name = "MICROSERVICIO-USUARIOS", // Nombre EN MAYÚSCULAS como aparece en Eureka
-        url = "https://vivacious-benevolence-production.up.railway.app"
+        name = "MICROSERVICIO-USUARIOS" // Nombre EN MAYÚSCULAS como aparece en Eureka
+      //  url = "https://vivacious-benevolence-production.up.railway.app"
 )
 public interface UsuariosClient {
 

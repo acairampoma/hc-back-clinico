@@ -70,6 +70,10 @@ public class RecetaCompletaDTO {
         @JsonProperty("firmada")
         private String firmada;
 
+        // ✅ CAMPO AGREGADO QUE FALTABA
+        @JsonProperty("fecha_firma")
+        private LocalDateTime fechaFirma;
+
         @JsonProperty("tipo_origen")
         private String tipoOrigen;
 

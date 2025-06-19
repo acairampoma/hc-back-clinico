@@ -42,13 +42,21 @@ spring:
           filters:
             - PrefixPath=/auth
 
-        # Usuarios - IGUAL QUE TU LOCAL
+        # Usuarios con rutas específicas primero
+        - id: microservicio-usuarios-clients
+          uri: lb://microservicio-usuarios
+          predicates:
+            - Path=/api/usuarios/clients/**
+          filters:
+            - StripPrefix=2  # Quita /api/usuarios, deja /clients/**
+
+        # Usuarios - ruta general
         - id: microservicio-usuarios
           uri: lb://microservicio-usuarios
           predicates:
             - Path=/api/usuarios/**
           filters:
-            - StripPrefix=2  # ✅ Como tu local
+            - StripPrefix=2  # Quita /api/usuarios, envía /**
 
   # 🔐 SECURITY - CORREGIDO PARA RAILWAY
   security:

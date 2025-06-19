@@ -20,4 +20,5 @@ public class UserDto {
     private String lastName;
     private Boolean enabled;
     private Set<String> roles;
+    private String datosProfesional;
 }
