@@ -3,11 +3,13 @@ package com.formacionbdi.microservicios.app.listas.services.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.formacionbdi.microservicios.app.listas.exception.EstructuraHospitalException;
 import com.formacionbdi.microservicios.app.listas.exception.ResourceNotFoundException;
+import com.formacionbdi.microservicios.app.listas.models.dto.PatientData;
 import com.formacionbdi.microservicios.app.listas.models.dto.PacientePorCamaDTO;
 import com.formacionbdi.microservicios.app.listas.repository.PacientePorCamaRepository;
 import com.formacionbdi.microservicios.app.listas.services.PacientePorCamaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -531,7 +533,8 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
                 throw new IllegalArgumentException("Resultado inválido: array vacío o null");
             }
 
-            log.debug("Procesando resultado con {} elementos", resultado.length);
+            log.debug("Procesando resultado: [{}]", String.join(", ", resultado[0].toString(), 
+                resultado.length > 1 && resultado[1] != null ? resultado[1].toString() : "null"));
 
             String bedNumber = null;
             String patientDataJson = null;
@@ -539,30 +542,44 @@ public class PacientePorCamaServiceImpl implements PacientePorCamaService {
             // Extraer bedNumber (primer elemento)
             if (resultado[0] != null) {
                 bedNumber = resultado[0].toString();
+                log.debug("Número de cama encontrado: {}", bedNumber);
             }
 
             // Extraer patientDataJson (segundo elemento si existe)
             if (resultado.length > 1 && resultado[1] != null) {
                 patientDataJson = resultado[1].toString();
+                log.debug("Datos del paciente encontrados para la cama {}", bedNumber);
+            } else {
+                log.debug("No se encontraron datos del paciente para la cama {}", bedNumber);
             }
 
+            // Crear y configurar el DTO
             PacientePorCamaDTO dto = new PacientePorCamaDTO();
             dto.setBedNumber(bedNumber);
 
-            // Si hay datos del paciente, convertir JSON a objeto
+            // Si hay datos del paciente, convertir de JSON
             if (patientDataJson != null && !patientDataJson.trim().isEmpty() && !"null".equals(patientDataJson)) {
                 try {
-                    log.debug("Parseando JSON para cama: {}", bedNumber);
-                    PacientePorCamaDTO.PatientData patientData = objectMapper.readValue(
-                            patientDataJson, PacientePorCamaDTO.PatientData.class);
+                    PatientData patientData = objectMapper.readValue(patientDataJson, PatientData.class);
+                    log.debug("Datos del paciente deserializados correctamente para la cama {}", bedNumber);
+                    
+                    // Establecer todos los datos del paciente en el DTO
                     dto.setPatientData(patientData);
-                    log.debug("JSON parseado exitosamente para cama: {}", bedNumber);
-                } catch (Exception jsonException) {
-                    log.warn("Error al parsear JSON de paciente para cama {}: {}", bedNumber, jsonException.getMessage());
-                    dto.setPatientData(null);
+                    dto.setOccupied(true);
+                    dto.setAvailable(false);
+                    
+                    log.info("Cama {} ocupada por paciente: {}", bedNumber, 
+                            patientData.getPersonalInfo() != null ? patientData.getPersonalInfo().getFullname() : "Sin nombre");
+                    
+                } catch (Exception e) {
+                    log.error("Error al deserializar datos del paciente para la cama {}: {}", bedNumber, e.getMessage());
+                    dto.setOccupied(false);
+                    dto.setAvailable(true);
                 }
             } else {
-                log.debug("No hay datos de paciente para cama {}", bedNumber);
+                log.info("La cama {} está disponible", bedNumber);
+                dto.setOccupied(false);
+                dto.setAvailable(true);
             }
 
             return dto;

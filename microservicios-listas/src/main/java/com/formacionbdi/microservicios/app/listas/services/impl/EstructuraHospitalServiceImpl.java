@@ -8,6 +8,8 @@ import com.formacionbdi.microservicios.app.listas.repository.EstructuraHospitalR
 import com.formacionbdi.microservicios.app.listas.services.EstructuraHospitalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,16 +23,18 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 @Transactional(readOnly = true)
+@Slf4j
 public class EstructuraHospitalServiceImpl implements EstructuraHospitalService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EstructuraHospitalServiceImpl.class);
 
     private final EstructuraHospitalRepository estructuraRepository;
     private final ObjectMapper objectMapper;
 
     @Override
     public List<EstructuraHospitalDTO> obtenerTodasLasEstructuras() {
-        log.info("Obteniendo todas las estructuras hospitalarias");
+        logger.info("Obteniendo todas las estructuras hospitalarias");
 
         try {
             List<String> estructurasJson = estructuraRepository.obtenerEstructuraCompleta();
@@ -44,14 +48,14 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error al obtener todas las estructuras", e);
+            logger.error("Error al obtener todas las estructuras", e);
             throw new EstructuraHospitalException("Error al obtener estructuras hospitalarias", e);
         }
     }
 
     @Override
     public EstructuraHospitalDTO obtenerPrimeraEstructura() {
-        log.info("Obteniendo primera estructura hospitalaria");
+        logger.info("Obteniendo primera estructura hospitalaria");
 
         try {
             String estructuraJson = estructuraRepository.obtenerPrimeraEstructura()
@@ -62,14 +66,14 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error al obtener primera estructura", e);
+            logger.error("Error al obtener primera estructura", e);
             throw new EstructuraHospitalException("Error al obtener estructura hospitalaria", e);
         }
     }
 
     @Override
     public EstructuraHospitalDTO obtenerEstructuraPorHospitalId(Long hospitalId) {
-        log.info("Obteniendo estructura para hospital ID: {}", hospitalId);
+        logger.info("Obteniendo estructura para hospital ID: {}", hospitalId);
 
         if (hospitalId == null || hospitalId <= 0) {
             throw new EstructuraHospitalException("ID de hospital inválido");
@@ -85,14 +89,14 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error al obtener estructura para hospital ID: {}", hospitalId, e);
+            logger.error("Error al obtener estructura para hospital ID: {}", hospitalId, e);
             throw new EstructuraHospitalException("Error al obtener estructura del hospital", e);
         }
     }
 
     @Override
     public EstructuraHospitalDTO obtenerEstructuraBasica() {
-        log.info("Obteniendo estructura básica hospitalaria");
+        logger.info("Obteniendo estructura básica hospitalaria");
 
         try {
             String estructuraJson = estructuraRepository.obtenerEstructuraBasica()
@@ -103,14 +107,14 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error al obtener estructura básica", e);
+            logger.error("Error al obtener estructura básica", e);
             throw new EstructuraHospitalException("Error al obtener estructura básica", e);
         }
     }
 
     @Override
     public boolean existeEstructuraPorHospitalId(Long hospitalId) {
-        log.info("Verificando existencia de estructura para hospital ID: {}", hospitalId);
+        logger.info("Verificando existencia de estructura para hospital ID: {}", hospitalId);
 
         if (hospitalId == null || hospitalId <= 0) {
             return false;
@@ -119,14 +123,14 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
         try {
             return estructuraRepository.existeEstructuraPorHospitalId(hospitalId);
         } catch (Exception e) {
-            log.error("Error al verificar existencia para hospital ID: {}", hospitalId, e);
+            logger.error("Error al verificar existencia para hospital ID: {}", hospitalId, e);
             return false;
         }
     }
 
     @Override
     public Object obtenerEstadisticasDisponibilidad() {
-        log.info("Obteniendo estadísticas de disponibilidad");
+        logger.info("Obteniendo estadísticas de disponibilidad");
 
         try {
             EstructuraHospitalDTO estructura = obtenerPrimeraEstructura();
@@ -141,8 +145,12 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
             // Contar camas por estado
             for (EstructuraHospitalDTO.PisoDTO piso : estructura.getFloors()) {
                 if (piso.getWings() != null) {
-                    totalCamas += contarCamasPorEstado(piso.getWings().getEast(), estadisticas);
-                    totalCamas += contarCamasPorEstado(piso.getWings().getWest(), estadisticas);
+                    if (piso.getWings().getEast() != null) {
+                        totalCamas += contarCamasPorEstado(piso.getWings().getEast(), estadisticas);
+                    }
+                    if (piso.getWings().getWest() != null) {
+                        totalCamas += contarCamasPorEstado(piso.getWings().getWest(), estadisticas);
+                    }
                 }
             }
 
@@ -157,7 +165,7 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
             return estadisticas;
 
         } catch (Exception e) {
-            log.error("Error al obtener estadísticas", e);
+            logger.error("Error al obtener estadísticas", e);
             throw new EstructuraHospitalException("Error al calcular estadísticas", e);
         }
     }
@@ -169,7 +177,7 @@ public class EstructuraHospitalServiceImpl implements EstructuraHospitalService 
         try {
             return objectMapper.readValue(json, EstructuraHospitalDTO.class);
         } catch (Exception e) {
-            log.error("Error al convertir JSON a DTO: {}", json, e);
+            logger.error("Error al convertir JSON a DTO: {}", json, e);
             throw new EstructuraHospitalException("Error al procesar datos del hospital", e);
         }
     }

@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -48,9 +48,7 @@ public class PacientePorCama {
      * Verifica si la cama está ocupada
      */
     public boolean isOccupied() {
-        return this.patientData != null &&
-                !this.patientData.trim().isEmpty() &&
-                !"null".equals(this.patientData.trim());
+        return this.patientData != null && !this.patientData.trim().isEmpty() && !"null".equals(this.patientData.trim());
     }
 
     /**

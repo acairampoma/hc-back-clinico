@@ -1,7 +1,7 @@
 package com.formacionbdi.microservicios.app.listas.controllers;
 
 import com.formacionbdi.microservicios.app.listas.models.dto.EstructuraHospitalDTO;
-import com.formacionbdi.microservicios.app.listas.models.response.ApiResponse;
+import com.formacionbdi.microservicios.commons.response.ApiResponse;
 import com.formacionbdi.microservicios.app.listas.services.EstructuraHospitalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 import java.util.List;
 
 /**
@@ -38,7 +38,7 @@ public class EstructuraHospitalController {
                 "Estructuras hospitalarias obtenidas exitosamente"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -56,7 +56,7 @@ public class EstructuraHospitalController {
                 "Estructura hospitalaria obtenida exitosamente"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -76,7 +76,7 @@ public class EstructuraHospitalController {
                 "Estructura del hospital obtenida exitosamente"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -94,7 +94,7 @@ public class EstructuraHospitalController {
                 "Estructura básica obtenida exitosamente"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -114,7 +114,7 @@ public class EstructuraHospitalController {
                 existe ? "El hospital tiene estructura configurada" : "El hospital no tiene estructura configurada"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -132,7 +132,7 @@ public class EstructuraHospitalController {
                 "Estadísticas de disponibilidad obtenidas exitosamente"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -148,7 +148,7 @@ public class EstructuraHospitalController {
                 "Health check exitoso"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -180,6 +180,6 @@ public class EstructuraHospitalController {
                 "Información del microservicio obtenida exitosamente"
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 }

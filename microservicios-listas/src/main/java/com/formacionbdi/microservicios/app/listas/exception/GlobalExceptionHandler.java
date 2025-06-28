@@ -1,6 +1,6 @@
 package com.formacionbdi.microservicios.app.listas.exception;
 
-import com.formacionbdi.microservicios.app.listas.models.response.ApiResponse;
+import com.formacionbdi.microservicios.commons.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

@@ -1,12 +1,11 @@
 package com.formacionbdi.microservicios.app.listas.models.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
-import javax.persistence.*;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 import org.hibernate.annotations.Type;
 
 /**
@@ -25,7 +24,7 @@ public class EstructuraHospital {
     private Long id;
 
     @Column(name = "estructura_completa", columnDefinition = "json")
-    @Type(type = "org.hibernate.type.TextType")
+    @Type(JsonType.class)
     @JsonProperty("estructura_completa")
     private String estructuraCompleta;
 

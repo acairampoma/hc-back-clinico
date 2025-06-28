@@ -1,7 +1,7 @@
 package com.formacionbdi.microservicios.app.listas.controllers;
 
 import com.formacionbdi.microservicios.app.listas.models.dto.PacientePorCamaDTO;
-import com.formacionbdi.microservicios.app.listas.models.response.ApiResponse;
+import com.formacionbdi.microservicios.commons.response.ApiResponse;
 import com.formacionbdi.microservicios.app.listas.services.PacientePorCamaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
