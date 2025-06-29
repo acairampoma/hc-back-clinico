@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.2.0.RELEASE</version>
+        <version>3.1.0</version>
         <relativePath/>
     </parent>
     <groupId>com.formacionbdi.microservicios.app.notas</groupId>
@@ -15,11 +15,17 @@
     <description>Microservicio de notas para Spring Boot</description>
 
     <properties>
-        <java.version>11</java.version>
-        <lombok.version>1.18.20</lombok.version>
+        <java.version>17</java.version>
+        <spring-cloud.version>2022.0.3</spring-cloud.version>
+        <lombok.version>1.18.28</lombok.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.formacionbdi.microservicios</groupId>
+            <artifactId>commons-response</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -72,14 +78,16 @@
             <scope>provided</scope>
         </dependency>
         
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-
+        <!-- Hibernate Types -->
         <dependency>
             <groupId>com.vladmihalcea</groupId>
-            <artifactId>hibernate-types-52</artifactId>
+            <artifactId>hibernate-types-60</artifactId>
+            <version>2.21.1</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.vladmihalcea</groupId>
+            <artifactId>hibernate-types-60</artifactId>
             <version>2.21.1</version>
         </dependency>
     </dependencies>
@@ -98,7 +106,7 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
-                <version>Hoxton.RC1</version>
+                <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

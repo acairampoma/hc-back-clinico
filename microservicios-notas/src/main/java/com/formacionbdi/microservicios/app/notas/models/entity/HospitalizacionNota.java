@@ -1,30 +1,22 @@
 package com.formacionbdi.microservicios.app.notas.models.entity;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-
-import javax.persistence.*;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
-/**
- * Entity que mapea la tabla hospitalizacion_notas
- * Incluye los nuevos campos JSONB: signos_vitales, firma_digital, audio_data
- */
 @Entity
 @Table(name = "hospitalizacion_notas")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 public class HospitalizacionNota {
 
     @Id
@@ -45,52 +37,40 @@ public class HospitalizacionNota {
 
     @Column(name = "tipo_nota", nullable = false, length = 2)
     @JsonProperty("tipo_nota")
-    private String tipoNota; // 01=Evolución, 02=Interconsulta, etc.
+    private String tipoNota;
 
     @Column(name = "titulo_nota", length = 200)
     @JsonProperty("titulo_nota")
     private String tituloNota;
 
-    @Column(name = "contenido_nota", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "contenido_nota", columnDefinition = "text")
     @JsonProperty("contenido_nota")
-    private String contenidoNota; // Rich HTML con imágenes, tablas, canvas
+    private String contenidoNota;
 
-    @Column(name = "turno", length = 2)
-    @JsonProperty("turno")
-    private String turno; // 01=Mañana, 02=Tarde, 03=Noche
-
-    @Column(name = "fecha_nota")
-    @JsonProperty("fecha_nota")
-    private LocalDateTime fechaNota;
-
-    @Column(name = "estado", length = 2)
-    @JsonProperty("estado")
-    private String estado; // 01=Borrador, 02=Finalizada
-
-    // ===== NUEVOS CAMPOS JSONB =====
-
-    @Type(type = "jsonb")
-    @Column(name = "signos_vitales", columnDefinition = "jsonb")
+    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     @JsonProperty("signos_vitales")
-    private JsonNode signosVitales; // Automático/Manual/Mixto + valores
+    private String signosVitales;
 
-    @Type(type = "jsonb")
-    @Column(name = "firma_digital", columnDefinition = "jsonb")
+    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     @JsonProperty("firma_digital")
-    private JsonNode firmaDigital; // Firma canvas + metadatos legales
+    private String firmaDigital;
 
-    @Type(type = "jsonb")
     @Column(name = "audio_data", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     @JsonProperty("audio_data")
-    private JsonNode audioData; // Audio + transcripción + limpieza automática
+    private String audioData;
 
-    // ===== AUDITORÍA =====
+    @Column(name = "estado", nullable = false, length = 20)
+    @JsonProperty("estado")
+    private String estado; // BORRADOR, FINALIZADA, ELIMINADA
 
     @Column(name = "creado_por", nullable = false)
     @JsonProperty("creado_por")
-    private Long creadoPor; // ID del médico
+    private Long creadoPor;
 
-    @Column(name = "creado_en")
+    @Column(name = "creado_en", nullable = false)
     @JsonProperty("creado_en")
     private LocalDateTime creadoEn;
 
@@ -104,14 +84,8 @@ public class HospitalizacionNota {
 
     @PrePersist
     protected void onCreate() {
-        if (fechaNota == null) {
-            fechaNota = LocalDateTime.now();
-        }
         if (creadoEn == null) {
             creadoEn = LocalDateTime.now();
-        }
-        if (estado == null) {
-            estado = "01"; // Borrador por defecto
         }
     }
 

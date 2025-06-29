@@ -1,16 +1,18 @@
 package com.formacionbdi.microservicios.app.notas.exception;
 
-import com.formacionbdi.microservicios.app.notas.models.response.ApiResponse;
+import com.formacionbdi.microservicios.commons.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,23 +28,10 @@ public class GlobalExceptionHandler {
     // ===== 🎯 EXCEPCIONES ESPECÍFICAS DE NEGOCIO =====
 
     @ExceptionHandler(NotaBusinessException.class)
-    public ResponseEntity<ApiResponse<Map<String, Object>>> handleNotaBusinessException(
-            NotaBusinessException ex, WebRequest request) {
-
-        log.warn("Regla de negocio violada - Código: {}, Mensaje: {}", ex.getCodigo(), ex.getMessage());
-
-        Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("codigo", ex.getCodigo());
-        errorDetails.put("detalles", ex.getDetalles());
-        errorDetails.put("timestamp", java.time.LocalDateTime.now());
-
-        ApiResponse<Map<String, Object>> response = ApiResponse.error(
-                ex.getMessage(),
-                "Regla de negocio no cumplida"
-        );
-        response.setData(errorDetails);
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    public ResponseEntity<ApiResponse<Object>> handleNotaBusinessException(NotaBusinessException ex) {
+        log.error("Error de negocio en el microservicio de notas: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(NotaNotFoundException.class)
@@ -116,26 +105,19 @@ public class GlobalExceptionHandler {
     // ===== 🔧 VALIDACIONES ESTÁNDAR DE SPRING =====
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, List<String>>>> handleValidationErrors(
-            MethodArgumentNotValidException ex) {
-
-        log.warn("Errores de validación en campos: {}",
-                ex.getBindingResult().getFieldErrors().size());
-
-        Map<String, List<String>> errores = ex.getBindingResult()
+    public ResponseEntity<ApiResponse<Object>> handleValidationException(MethodArgumentNotValidException ex) {
+        String errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .collect(Collectors.groupingBy(
-                        FieldError::getField,
-                        Collectors.mapping(FieldError::getDefaultMessage, Collectors.toList())
-                ));
+                .map(error -> String.format("%s: %s", error.getField(), error.getDefaultMessage()))
+                .collect(Collectors.joining(", "));
 
-        ApiResponse<Map<String, List<String>>> response = ApiResponse.error(
-                "Datos inválidos en la solicitud"
-        );
-        response.setData(errores);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        String message = "Error de validación en los datos de entrada: " + errors;
+        
+        log.error(message);
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(message));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -162,6 +144,25 @@ public class GlobalExceptionHandler {
         ApiResponse<Map<String, Object>> response = ApiResponse.error(
                 "Errores de validación en los datos",
                 "Restricciones violadas"
+        );
+        response.setData(errorDetails);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(JsonInvalidoException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleJsonInvalidoException(
+            JsonInvalidoException ex, WebRequest request) {
+
+        log.error("Error de JSON inválido: {}", ex.getMessage());
+
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("mensaje", ex.getMessage());
+        errorDetails.put("timestamp", java.time.LocalDateTime.now());
+
+        ApiResponse<Map<String, Object>> response = ApiResponse.error(
+                "Error en el formato JSON",
+                "JSON inválido"
         );
         response.setData(errorDetails);
 

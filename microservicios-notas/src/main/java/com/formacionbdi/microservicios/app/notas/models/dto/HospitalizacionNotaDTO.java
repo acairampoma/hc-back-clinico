@@ -1,16 +1,15 @@
 package com.formacionbdi.microservicios.app.notas.models.dto;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 /**
@@ -21,48 +20,37 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class HospitalizacionNotaDTO {
 
     @JsonProperty("id")
     private Long id;
 
+    @NotBlank(message = "El número de nota no puede estar vacío")
+    @Size(max = 20, message = "El número de nota no puede exceder los 20 caracteres")
     @JsonProperty("numero_nota")
     private String numeroNota;
 
-    @NotNull(message = "Hospitalizacion ID es requerido")
+    @NotNull(message = "El ID de hospitalización no puede estar vacío")
     @JsonProperty("hospitalizacion_id")
     private Long hospitalizacionId;
 
-    @NotBlank(message = "Numero cuenta es requerido")
-    @Size(max = 20, message = "Numero cuenta no puede exceder 20 caracteres")
+    @NotBlank(message = "El número de cuenta no puede estar vacío")
+    @Size(max = 20, message = "El número de cuenta no puede exceder los 20 caracteres")
     @JsonProperty("numero_cuenta")
     private String numeroCuenta;
 
-    @NotBlank(message = "Tipo de nota es requerido")
-    @Size(max = 2, message = "Tipo nota debe ser de 2 caracteres")
+    @NotBlank(message = "El tipo de nota no puede estar vacío")
+    @Size(max = 2, message = "El tipo de nota no puede exceder los 2 caracteres")
     @JsonProperty("tipo_nota")
     private String tipoNota; // 01=Evolución, 02=Interconsulta
 
-    @Size(max = 200, message = "Titulo no puede exceder 200 caracteres")
+    @Size(max = 200, message = "El título de la nota no puede exceder los 200 caracteres")
     @JsonProperty("titulo_nota")
     private String tituloNota;
 
     @NotBlank(message = "Contenido de nota es requerido")
     @JsonProperty("contenido_nota")
     private String contenidoNota; // Rich HTML con imágenes, tablas, canvas
-
-    @Size(max = 2, message = "Turno debe ser de 2 caracteres")
-    @JsonProperty("turno")
-    private String turno; // 01=Mañana, 02=Tarde, 03=Noche
-
-    @JsonProperty("fecha_nota")
-    private LocalDateTime fechaNota;
-
-    @JsonProperty("estado")
-    private String estado; // 01=Borrador, 02=Finalizada
-
-    // ===== CAMPOS JSONB =====
 
     @JsonProperty("signos_vitales")
     private JsonNode signosVitales; // Flexible: automático/manual/mixto
@@ -73,9 +61,12 @@ public class HospitalizacionNotaDTO {
     @JsonProperty("audio_data")
     private JsonNode audioData; // Audio + transcripción + limpieza
 
-    // ===== AUDITORÍA =====
+    @NotBlank(message = "El estado no puede estar vacío")
+    @Size(max = 20, message = "El estado no puede exceder los 20 caracteres")
+    @JsonProperty("estado")
+    private String estado; // 01=Borrador, 02=Finalizada
 
-    @NotNull(message = "Creado por es requerido")
+    @NotNull(message = "El ID del creador no puede estar vacío")
     @JsonProperty("creado_por")
     private Long creadoPor; // ID del médico
 

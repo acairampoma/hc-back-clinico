@@ -41,6 +41,17 @@ public interface HospitalizacionNotaRepository extends JpaRepository<Hospitaliza
     Long contarNotasBorradorPorMedicoYHospitalizacion(@Param("hospitalizacionId") Long hospitalizacionId,
                                                       @Param("medicoId") Long medicoId);
 
+    /**
+     * Verifica si existe una nota en borrador para una hospitalización y médico específicos
+     */
+    @Query("SELECT COUNT(n) > 0 FROM HospitalizacionNota n " +
+            "WHERE n.hospitalizacionId = :hospitalizacionId " +
+            "AND n.estado = '01' " +
+            "AND n.creadoPor = :medicoId")
+    boolean existeNotaBorradorPorHospitalizacion(
+            @Param("hospitalizacionId") Long hospitalizacionId,
+            @Param("medicoId") Long medicoId);
+
     // ===== 📖 CONSULTAS PRINCIPALES =====
 
     /**
@@ -48,7 +59,7 @@ public interface HospitalizacionNotaRepository extends JpaRepository<Hospitaliza
      */
     @Query("SELECT n FROM HospitalizacionNota n " +
             "WHERE n.hospitalizacionId = :hospitalizacionId " +
-            "ORDER BY n.fechaNota DESC, n.creadoEn DESC")
+            "ORDER BY n.creadoEn DESC")
     List<HospitalizacionNota> findByHospitalizacionIdOrderByFecha(@Param("hospitalizacionId") Long hospitalizacionId);
 
     /**
@@ -57,7 +68,7 @@ public interface HospitalizacionNotaRepository extends JpaRepository<Hospitaliza
     @Query("SELECT n FROM HospitalizacionNota n " +
             "WHERE n.hospitalizacionId = :hospitalizacionId " +
             "AND n.estado = '02' " +
-            "ORDER BY n.fechaNota DESC")
+            "ORDER BY n.creadoEn DESC")
     List<HospitalizacionNota> findNotasFinalizadasPorHospitalizacion(@Param("hospitalizacionId") Long hospitalizacionId);
 
     /**
@@ -76,7 +87,7 @@ public interface HospitalizacionNotaRepository extends JpaRepository<Hospitaliza
      */
     @Query("SELECT n FROM HospitalizacionNota n " +
             "WHERE n.numeroCuenta = :numeroCuenta " +
-            "ORDER BY n.fechaNota DESC")
+            "ORDER BY n.creadoEn DESC")
     List<HospitalizacionNota> findByNumeroCuenta(@Param("numeroCuenta") String numeroCuenta);
 
     /**
@@ -85,7 +96,7 @@ public interface HospitalizacionNotaRepository extends JpaRepository<Hospitaliza
     @Query("SELECT n FROM HospitalizacionNota n " +
             "WHERE n.hospitalizacionId = :hospitalizacionId " +
             "AND n.tipoNota = :tipoNota " +
-            "ORDER BY n.fechaNota DESC")
+            "ORDER BY n.creadoEn DESC")
     List<HospitalizacionNota> findByHospitalizacionYTipo(@Param("hospitalizacionId") Long hospitalizacionId,
                                                          @Param("tipoNota") String tipoNota);
 
@@ -94,8 +105,8 @@ public interface HospitalizacionNotaRepository extends JpaRepository<Hospitaliza
      */
     @Query("SELECT n FROM HospitalizacionNota n " +
             "WHERE n.creadoPor = :medicoId " +
-            "AND n.fechaNota BETWEEN :fechaInicio AND :fechaFin " +
-            "ORDER BY n.fechaNota DESC")
+            "AND n.creadoEn BETWEEN :fechaInicio AND :fechaFin " +
+            "ORDER BY n.creadoEn DESC")
     List<HospitalizacionNota> findByMedicoYRangoFechas(@Param("medicoId") Long medicoId,
                                                        @Param("fechaInicio") LocalDateTime fechaInicio,
                                                        @Param("fechaFin") LocalDateTime fechaFin);

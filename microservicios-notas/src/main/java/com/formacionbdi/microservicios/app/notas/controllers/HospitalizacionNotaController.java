@@ -1,7 +1,7 @@
 package com.formacionbdi.microservicios.app.notas.controllers;
 
 import com.formacionbdi.microservicios.app.notas.models.dto.HospitalizacionNotaDTO;
-import com.formacionbdi.microservicios.app.notas.models.response.ApiResponse;
+import com.formacionbdi.microservicios.commons.response.ApiResponse;
 import com.formacionbdi.microservicios.app.notas.services.HospitalizacionNotaService;
 
 import lombok.RequiredArgsConstructor;
@@ -13,16 +13,16 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * 🏥 CONTROLLER para gestión de notas de hospitalización
+ * CONTROLLER para gestión de notas de hospitalización
  * Aplicando programación funcional y código limpio
  */
 @RestController
@@ -33,7 +33,7 @@ public class HospitalizacionNotaController {
 
     private final HospitalizacionNotaService notaService;
 
-    // ===== 🔒 VALIDACIÓN CRÍTICA =====
+    // ===== VALIDACIÓN CRÍTICA =====
 
     /**
      * Verifica si un médico puede crear una nueva nota para una hospitalización
@@ -44,7 +44,7 @@ public class HospitalizacionNotaController {
             @PathVariable @NotNull @Min(1) Long medicoId,
             @PathVariable @NotNull @Min(1) Long hospitalizacionId) {
 
-        log.info("🔍 Validando creación de nota - Médico: {}, Hospitalización: {}",
+        log.info(" Validando creación de nota - Médico: {}, Hospitalización: {}",
                 medicoId, hospitalizacionId);
 
         return ejecutarConManejo(() -> {
@@ -62,7 +62,7 @@ public class HospitalizacionNotaController {
         });
     }
 
-    // ===== 📖 CONSULTAR NOTAS =====
+    // ===== CONSULTAR NOTAS =====
 
     /**
      * Obtiene todas las notas de una hospitalización
@@ -73,7 +73,7 @@ public class HospitalizacionNotaController {
             @PathVariable @NotNull @Min(1) Long hospitalizacionId,
             @RequestParam(defaultValue = "todas") String estado) {
 
-        log.info("📖 Obteniendo notas para hospitalización {} con estado: {}",
+        log.info(" Obteniendo notas para hospitalización {} con estado: {}",
                 hospitalizacionId, estado);
 
         return ejecutarConManejo(() -> {
@@ -101,7 +101,7 @@ public class HospitalizacionNotaController {
     public ResponseEntity<ApiResponse<HospitalizacionNotaDTO>> obtenerNotaPorId(
             @PathVariable @NotNull @Min(1) Long notaId) {
 
-        log.info("📖 Obteniendo nota con ID: {}", notaId);
+        log.info(" Obteniendo nota con ID: {}", notaId);
 
         return ejecutarConManejo(() ->
                 notaService.obtenerNotaPorId(notaId)
@@ -118,7 +118,7 @@ public class HospitalizacionNotaController {
     public ResponseEntity<ApiResponse<List<HospitalizacionNotaDTO>>> buscarPorNumeroCuenta(
             @PathVariable String numeroCuenta) {
 
-        log.info("📖 Buscando notas por número de cuenta: {}", numeroCuenta);
+        log.info(" Buscando notas por número de cuenta: {}", numeroCuenta);
 
         return ejecutarConManejo(() -> {
             var notas = notaService.buscarPorNumeroCuenta(numeroCuenta);
@@ -137,7 +137,7 @@ public class HospitalizacionNotaController {
             @PathVariable @NotNull @Min(1) Long hospitalizacionId,
             @PathVariable String tipoNota) {
 
-        log.info("📖 Buscando notas tipo {} para hospitalización {}", tipoNota, hospitalizacionId);
+        log.info(" Buscando notas tipo {} para hospitalización {}", tipoNota, hospitalizacionId);
 
         return ejecutarConManejo(() -> {
             var notas = notaService.buscarPorTipo(hospitalizacionId, tipoNota);
@@ -159,7 +159,7 @@ public class HospitalizacionNotaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin) {
 
-        log.info("📖 Buscando notas del médico {} entre {} y {}",
+        log.info(" Buscando notas del médico {} entre {} y {}",
                 medicoId, fechaInicio, fechaFin);
 
         return ejecutarConManejo(() -> {
@@ -169,7 +169,7 @@ public class HospitalizacionNotaController {
         });
     }
 
-    // ===== 📝 CRUD INTELIGENTE =====
+    // ===== CRUD INTELIGENTE =====
 
     /**
      * Crea una nueva nota (con auto-limpieza)
@@ -179,14 +179,15 @@ public class HospitalizacionNotaController {
     public ResponseEntity<ApiResponse<HospitalizacionNotaDTO>> crearNota(
             @Valid @RequestBody HospitalizacionNotaDTO notaDTO) {
 
-        log.info("📝 Creando nueva nota para hospitalización {} por médico {}",
-                notaDTO.getHospitalizacionId(), notaDTO.getCreadoPor());
-
-        return ejecutarConManejo(() -> {
-            var notaCreada = notaService.crearNota(notaDTO);
-            return ApiResponse.success(notaCreada,
-                    String.format("Nota creada exitosamente con ID %d", notaCreada.getId()));
-        }, HttpStatus.CREATED);
+        log.info(" Creando nueva nota para hospitalización: {}", notaDTO.getHospitalizacionId());
+        
+        // Establecer fecha de creación
+        notaDTO.setCreadoEn(LocalDateTime.now());
+        
+        var notaCreada = notaService.crearNota(notaDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(notaCreada,
+                        String.format("Nota creada exitosamente con ID %d", notaCreada.getId())));
     }
 
     /**
@@ -199,7 +200,7 @@ public class HospitalizacionNotaController {
             @Valid @RequestBody HospitalizacionNotaDTO notaDTO,
             @RequestParam @NotNull @Min(1) Long medicoId) {
 
-        log.info("🔄 Actualizando nota {} por médico {}", notaId, medicoId);
+        log.info(" Actualizando nota {} por médico {}", notaId, medicoId);
 
         return ejecutarConManejo(() -> {
             var notaActualizada = notaService.actualizarNota(notaId, notaDTO, medicoId);
@@ -216,7 +217,7 @@ public class HospitalizacionNotaController {
             @PathVariable @NotNull @Min(1) Long notaId,
             @RequestParam @NotNull @Min(1) Long medicoId) {
 
-        log.info("🏁 Finalizando nota {} por médico {}", notaId, medicoId);
+        log.info(" Finalizando nota {} por médico {}", notaId, medicoId);
 
         return ejecutarConManejo(() -> {
             var notaFinalizada = notaService.finalizarNota(notaId, medicoId);
@@ -233,7 +234,7 @@ public class HospitalizacionNotaController {
             @PathVariable @NotNull @Min(1) Long notaId,
             @RequestParam @NotNull @Min(1) Long medicoId) {
 
-        log.info("🗑️ Eliminando nota {} por médico {}", notaId, medicoId);
+        log.info(" Eliminando nota {} por médico {}", notaId, medicoId);
 
         return ejecutarConManejo(() -> {
             notaService.eliminarNota(notaId, medicoId);
@@ -241,7 +242,7 @@ public class HospitalizacionNotaController {
         }, HttpStatus.NO_CONTENT);
     }
 
-    // ===== 🧹 GESTIÓN DE AUDIO =====
+    // ===== GESTIÓN DE AUDIO =====
 
     /**
      * Elimina el audio de una nota específica
@@ -252,7 +253,7 @@ public class HospitalizacionNotaController {
             @PathVariable @NotNull @Min(1) Long notaId,
             @RequestParam @NotNull @Min(1) Long medicoId) {
 
-        log.info("🎵 Eliminando audio de nota {} por médico {}", notaId, medicoId);
+        log.info(" Eliminando audio de nota {} por médico {}", notaId, medicoId);
 
         return ejecutarConManejo(() -> {
             boolean eliminado = notaService.eliminarAudioNota(notaId, medicoId);
@@ -289,7 +290,7 @@ public class HospitalizacionNotaController {
         });
     }
 
-    // ===== 📊 ESTADÍSTICAS =====
+    // ===== ESTADÍSTICAS =====
 
     /**
      * Obtiene estadísticas de una hospitalización
@@ -299,7 +300,7 @@ public class HospitalizacionNotaController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> obtenerEstadisticas(
             @PathVariable @NotNull @Min(1) Long hospitalizacionId) {
 
-        log.info("📊 Obteniendo estadísticas de hospitalización {}", hospitalizacionId);
+        log.info(" Obteniendo estadísticas de hospitalización {}", hospitalizacionId);
 
         return ejecutarConManejo(() -> {
             var estadisticas = notaService.obtenerEstadisticasHospitalizacion(hospitalizacionId);
@@ -307,7 +308,7 @@ public class HospitalizacionNotaController {
         });
     }
 
-    // ===== 📄 GENERACIÓN DE PDF =====
+    // ===== GENERACIÓN DE PDF =====
 
     /**
      * Genera PDF de una nota específica
@@ -315,7 +316,7 @@ public class HospitalizacionNotaController {
      */
     @GetMapping("/{notaId}/pdf")
     public ResponseEntity<byte[]> generarPdfNota(@PathVariable @NotNull @Min(1) Long notaId) {
-        log.info("📄 Generando PDF de nota {}", notaId);
+        log.info(" Generando PDF de nota {}", notaId);
 
         try {
             byte[] pdfBytes = notaService.generarPdfNota(notaId);
@@ -331,7 +332,7 @@ public class HospitalizacionNotaController {
                     .body(pdfBytes);
 
         } catch (Exception e) {
-            log.error("❌ Error generando PDF de nota {}: {}", notaId, e.getMessage());
+            log.error(" Error generando PDF de nota {}: {}", notaId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -344,7 +345,7 @@ public class HospitalizacionNotaController {
     public ResponseEntity<byte[]> generarPdfConsolidado(
             @PathVariable @NotNull @Min(1) Long hospitalizacionId) {
 
-        log.info("📄 Generando PDF consolidado de hospitalización {}", hospitalizacionId);
+        log.info(" Generando PDF consolidado de hospitalización {}", hospitalizacionId);
 
         try {
             byte[] pdfBytes = notaService.generarPdfConsolidado(hospitalizacionId);
@@ -360,13 +361,13 @@ public class HospitalizacionNotaController {
                     .body(pdfBytes);
 
         } catch (Exception e) {
-            log.error("❌ Error generando PDF consolidado de hospitalización {}: {}",
+            log.error(" Error generando PDF consolidado de hospitalización {}: {}",
                     hospitalizacionId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // ===== 🛠️ UTILIDADES =====
+    // ===== UTILIDADES =====
 
     /**
      * Health Check del microservicio
@@ -405,20 +406,20 @@ public class HospitalizacionNotaController {
                 "version", "1.0.0",
                 "puerto", 8004,
                 "caracteristicas", List.of(
-                        "🔒 Validación de reglas de negocio",
-                        "📝 CRUD inteligente con auto-limpieza",
-                        "🎵 Gestión de audio y transcripciones",
-                        "✍️ Firma digital integrada",
-                        "📄 Generación de PDF individual y consolidado",
-                        "📊 Estadísticas y reportes",
-                        "🧹 Auto-limpieza de archivos antiguos"
+                        " Validación de reglas de negocio",
+                        " CRUD inteligente con auto-limpieza",
+                        " Gestión de audio y transcripciones",
+                        " Firma digital integrada",
+                        " Generación de PDF individual y consolidado",
+                        " Estadísticas y reportes",
+                        " Auto-limpieza de archivos antiguos"
                 )
         );
 
         return ResponseEntity.ok(ApiResponse.success(info, "Información del microservicio"));
     }
 
-    // ===== 🔧 MÉTODO HELPER FUNCIONAL =====
+    // ===== MÉTODO HELPER FUNCIONAL =====
 
     private <T> ResponseEntity<ApiResponse<T>> ejecutarConManejo(Supplier<ApiResponse<T>> operacion) {
         return ejecutarConManejo(operacion, HttpStatus.OK);
@@ -431,7 +432,7 @@ public class HospitalizacionNotaController {
             var resultado = operacion.get();
             return ResponseEntity.status(statusExito).body(resultado);
         } catch (Exception e) {
-            log.error("❌ Error en operación: {}", e.getMessage(), e);
+            log.error(" Error en operación: {}", e.getMessage(), e);
             throw e; // Re-lanzar para que lo maneje GlobalExceptionHandler
         }
     }

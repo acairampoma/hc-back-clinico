@@ -1,78 +1,69 @@
 package com.formacionbdi.microservicios.app.notas.exception;
 
+import lombok.Getter;
+
 /**
  * Excepción específica para reglas de negocio de notas vitales
  */
+@Getter
 public class NotaBusinessException extends RuntimeException {
 
-    private final String codigo;
-    private final String detalles;
+    private final String message;
 
-    public NotaBusinessException(String codigo, String message) {
+    public NotaBusinessException(String message) {
         super(message);
-        this.codigo = codigo;
-        this.detalles = null;
+        this.message = message;
     }
 
-    public NotaBusinessException(String codigo, String message, String detalles) {
-        super(message);
-        this.codigo = codigo;
-        this.detalles = detalles;
-    }
-
-    public NotaBusinessException(String codigo, String message, Throwable cause) {
+    public NotaBusinessException(String message, Throwable cause) {
         super(message, cause);
-        this.codigo = codigo;
-        this.detalles = null;
+        this.message = message;
     }
 
-    public String getCodigo() {
-        return codigo;
+    public NotaBusinessException(String message, String detalles) {
+        super(message);
+        this.message = message;
     }
 
-    public String getDetalles() {
-        return detalles;
+    public NotaBusinessException(String message, Throwable cause, String detalles) {
+        super(message, cause);
+        this.message = message;
     }
 
-    // ===== MÉTODOS ESTÁTICOS PARA ERRORES COMUNES =====
+    public static NotaBusinessException notaYaFinalizada(Long notaId) {
+        return new NotaBusinessException(String.format("La nota %d ya está finalizada y no puede ser modificada", notaId));
+    }
+
+    public static NotaBusinessException notaNoEsBorrador(Long notaId) {
+        return new NotaBusinessException(String.format("La nota %d no está en estado borrador", notaId));
+    }
+
+    public static NotaBusinessException sinPermisosModificacion(Long notaId, Long medicoId) {
+        return new NotaBusinessException(
+                String.format("El médico %d no tiene permisos para modificar la nota %d", medicoId, notaId));
+    }
 
     public static NotaBusinessException notaPuedeCrear(Long medicoId, Long hospitalizacionId) {
         return new NotaBusinessException(
-                "NOTA_001",
-                "No se puede crear una nueva nota",
                 String.format("El médico %d ya tiene una nota en borrador para la hospitalización %d",
                         medicoId, hospitalizacionId)
         );
     }
 
-    public static NotaBusinessException notaYaFinalizada(Long notaId) {
-        return new NotaBusinessException(
-                "NOTA_002",
-                "La nota ya está finalizada y no puede ser modificada",
-                String.format("Nota ID: %d", notaId)
-        );
-    }
-
     public static NotaBusinessException audioNoDisponible(Long notaId) {
         return new NotaBusinessException(
-                "NOTA_003",
-                "El audio de la nota no está disponible o fue eliminado",
                 String.format("Nota ID: %d", notaId)
         );
     }
 
     public static NotaBusinessException firmaRequerida(Long notaId) {
         return new NotaBusinessException(
-                "NOTA_004",
-                "La nota requiere firma digital para ser finalizada",
                 String.format("Nota ID: %d", notaId)
         );
     }
 
     public static NotaBusinessException permisosDenegados(Long medicoId, Long notaId) {
         return new NotaBusinessException(
-                "NOTA_005",
-                "El médico no tiene permisos para modificar esta nota",
                 String.format("Médico %d intentó modificar nota %d", medicoId, notaId)
         );
     }

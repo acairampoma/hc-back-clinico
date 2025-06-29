@@ -1,5 +1,6 @@
 package com.formacionbdi.microservicios.app.notas.services.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.formacionbdi.microservicios.app.notas.exception.*;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaService {
 
-    private final HospitalizacionNotaRepository repository;
+    private final HospitalizacionNotaRepository notaRepository;
     private final ObjectMapper objectMapper;
 
     // ===== 🔧 FUNCIONES HELPER FUNCIONALES =====
@@ -39,15 +40,32 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
     private final Predicate<HospitalizacionNota> esBorrador = nota -> "01".equals(nota.getEstado());
     private final Predicate<HospitalizacionNota> esFinalizada = nota -> "02".equals(nota.getEstado());
-    private final Predicate<HospitalizacionNota> tieneAudio = nota ->
-            Optional.ofNullable(nota.getAudioData())
-                    .map(audio -> audio.has("tiene_audio") && audio.get("tiene_audio").asBoolean())
-                    .orElse(false);
 
-    private final Predicate<HospitalizacionNota> tieneFirma = nota ->
-            Optional.ofNullable(nota.getFirmaDigital())
-                    .map(firma -> firma.has("tiene_firma") && firma.get("tiene_firma").asBoolean())
-                    .orElse(false);
+    private boolean tieneAudio(HospitalizacionNota nota) {
+        return Optional.ofNullable(nota.getAudioData())
+                .map(audio -> {
+                    try {
+                        JsonNode node = objectMapper.readTree(audio);
+                        return node.has("tiene_audio") && node.get("tiene_audio").asBoolean();
+                    } catch (JsonProcessingException e) {
+                        return false;
+                    }
+                })
+                .orElse(false);
+    }
+
+    private boolean tieneFirma(HospitalizacionNota nota) {
+        return Optional.ofNullable(nota.getFirmaDigital())
+                .map(firma -> {
+                    try {
+                        JsonNode node = objectMapper.readTree(firma);
+                        return node.has("tiene_firma") && node.get("tiene_firma").asBoolean();
+                    } catch (JsonProcessingException e) {
+                        return false;
+                    }
+                })
+                .orElse(false);
+    }
 
     // ===== 🔒 VALIDACIONES CRÍTICAS =====
 
@@ -56,7 +74,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
         log.debug("🔍 Validando si médico {} puede crear nota para hospitalización {}",
                 medicoId, hospitalizacionId);
 
-        return repository.puedeCrearNota(hospitalizacionId, medicoId);
+        return notaRepository.puedeCrearNota(hospitalizacionId, medicoId);
     }
 
     @Override
@@ -76,7 +94,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     public void validarPermisosMedico(Long notaId, Long medicoId) {
         buscarNotaPorId(notaId);
 
-        boolean tienePermisos = repository.findById(notaId)
+        boolean tienePermisos = notaRepository.findById(notaId)
                 .map(HospitalizacionNota::getCreadoPor)
                 .filter(creadorId -> Objects.equals(creadorId, medicoId))
                 .isPresent();
@@ -92,7 +110,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     public List<HospitalizacionNotaDTO> obtenerNotasPorHospitalizacion(Long hospitalizacionId) {
         log.debug("📖 Obteniendo notas para hospitalización {}", hospitalizacionId);
 
-        return repository.findByHospitalizacionIdOrderByFecha(hospitalizacionId)
+        return notaRepository.findByHospitalizacionIdOrderByFecha(hospitalizacionId)
                 .stream()
                 .map(toDTO)
                 .collect(Collectors.toList());
@@ -100,12 +118,12 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
     @Override
     public Optional<HospitalizacionNotaDTO> obtenerNotaPorId(Long notaId) {
-        return repository.findById(notaId).map(toDTO);
+        return notaRepository.findById(notaId).map(toDTO);
     }
 
     @Override
     public List<HospitalizacionNotaDTO> obtenerNotasFinalizadas(Long hospitalizacionId) {
-        return repository.findNotasFinalizadasPorHospitalizacion(hospitalizacionId)
+        return notaRepository.findNotasFinalizadasPorHospitalizacion(hospitalizacionId)
                 .stream()
                 .map(toDTO)
                 .collect(Collectors.toList());
@@ -113,7 +131,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
     @Override
     public List<HospitalizacionNotaDTO> obtenerNotasBorrador(Long hospitalizacionId) {
-        return repository.findNotasBorradorPorHospitalizacion(hospitalizacionId)
+        return notaRepository.findNotasBorradorPorHospitalizacion(hospitalizacionId)
                 .stream()
                 .map(toDTO)
                 .collect(Collectors.toList());
@@ -121,7 +139,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
     @Override
     public List<HospitalizacionNotaDTO> buscarPorNumeroCuenta(String numeroCuenta) {
-        return repository.findByNumeroCuenta(numeroCuenta)
+        return notaRepository.findByNumeroCuenta(numeroCuenta)
                 .stream()
                 .map(toDTO)
                 .collect(Collectors.toList());
@@ -132,20 +150,19 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     @Override
     @Transactional
     public HospitalizacionNotaDTO crearNota(HospitalizacionNotaDTO notaDTO) {
-        log.info("📝 Creando nueva nota para hospitalización {}", notaDTO.getHospitalizacionId());
+        log.info("Creando nota para hospitalización: {}", notaDTO.getHospitalizacionId());
+        
+        // Validar datos JSON
+        validarDatosJson(notaDTO);
+        
+        // Establecer fecha de creación
+        notaDTO.setCreadoEn(LocalDateTime.now());
 
-        // Validaciones funcionales
-        validarCreacionNota(notaDTO);
-
-        // Auto-limpieza de audio anterior (funcional)
-        limpiarAudioAnteriorSiExiste(notaDTO);
-
-        // Preparar y guardar
-        var notaEntity = prepararNuevaNota(notaDTO);
-        var notaGuardada = repository.save(notaEntity);
-
-        log.info("✅ Nota creada exitosamente con ID {}", notaGuardada.getId());
-        return toDTO.apply(notaGuardada);
+        // Convertir y guardar
+        HospitalizacionNota nota = convertirAEntity(notaDTO);
+        nota = notaRepository.save(nota);
+        
+        return convertirADTO(nota);
     }
 
     @Override
@@ -155,9 +172,9 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
         validarNotaPuedeSerModificada(notaId, medicoId);
 
-        return repository.findById(notaId)
+        return notaRepository.findById(notaId)
                 .map(nota -> actualizarCamposNota(nota, notaDTO))
-                .map(repository::save)
+                .map(notaRepository::save)
                 .map(toDTO)
                 .orElseThrow(() -> NotaNotFoundException.nota(notaId));
     }
@@ -167,11 +184,11 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     public HospitalizacionNotaDTO finalizarNota(Long notaId, Long medicoId) {
         log.info("🏁 Finalizando nota {} por médico {}", notaId, medicoId);
 
-        return repository.findById(notaId)
+        return notaRepository.findById(notaId)
                 .filter(esBorrador)
                 .filter(nota -> Objects.equals(nota.getCreadoPor(), medicoId))
                 .map(this::validarYFinalizar)
-                .map(repository::save)
+                .map(notaRepository::save)
                 .map(toDTO)
                 .orElseThrow(() -> NotaBusinessException.notaYaFinalizada(notaId));
     }
@@ -182,14 +199,14 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
         log.info("🗑️ Eliminando nota {} por médico {}", notaId, medicoId);
 
         validarNotaPuedeSerModificada(notaId, medicoId);
-        repository.deleteById(notaId);
+        notaRepository.deleteById(notaId);
     }
 
     // ===== 🎯 OPERACIONES ESPECÍFICAS =====
 
     @Override
     public List<HospitalizacionNotaDTO> buscarPorTipo(Long hospitalizacionId, String tipoNota) {
-        return repository.findByHospitalizacionYTipo(hospitalizacionId, tipoNota)
+        return notaRepository.findByHospitalizacionYTipo(hospitalizacionId, tipoNota)
                 .stream()
                 .map(toDTO)
                 .collect(Collectors.toList());
@@ -199,7 +216,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     public List<HospitalizacionNotaDTO> buscarPorMedicoYFechas(Long medicoId,
                                                                LocalDateTime fechaInicio,
                                                                LocalDateTime fechaFin) {
-        return repository.findByMedicoYRangoFechas(medicoId, fechaInicio, fechaFin)
+        return notaRepository.findByMedicoYRangoFechas(medicoId, fechaInicio, fechaFin)
                 .stream()
                 .map(toDTO)
                 .collect(Collectors.toList());
@@ -214,7 +231,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
         var fechaLimite = LocalDateTime.now().minusDays(diasAntiguedad);
 
-        return repository.findNotasParaLimpiezaAudio(fechaLimite)
+        return notaRepository.findNotasParaLimpiezaAudio(fechaLimite)
                 .stream()
                 .mapToInt(this::limpiarAudioDeNota)
                 .sum();
@@ -225,17 +242,17 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     public boolean eliminarAudioNota(Long notaId, Long medicoId) {
         validarPermisosMedico(notaId, medicoId);
 
-        return repository.findById(notaId)
-                .filter(tieneAudio)
+        return notaRepository.findById(notaId)
+                .filter(this::tieneAudio)
                 .map(this::marcarAudioComoEliminado)
-                .map(repository::save)
+                .map(notaRepository::save)
                 .isPresent();
     }
 
     @Override
     public boolean tieneAudioDisponible(Long notaId) {
-        return repository.findById(notaId)
-                .filter(tieneAudio)
+        return notaRepository.findById(notaId)
+                .filter(this::tieneAudio)
                 .isPresent();
     }
 
@@ -243,21 +260,21 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
     @Override
     public Map<String, Object> obtenerEstadisticasHospitalizacion(Long hospitalizacionId) {
-        var notas = repository.findByHospitalizacionIdOrderByFecha(hospitalizacionId);
+        var notas = notaRepository.findByHospitalizacionIdOrderByFecha(hospitalizacionId);
 
         return Map.of(
                 "total_notas", notas.size(),
                 "notas_borrador", notas.stream().mapToLong(nota -> esBorrador.test(nota) ? 1 : 0).sum(),
                 "notas_finalizadas", notas.stream().mapToLong(nota -> esFinalizada.test(nota) ? 1 : 0).sum(),
-                "notas_con_audio", notas.stream().mapToLong(nota -> tieneAudio.test(nota) ? 1 : 0).sum(),
-                "notas_con_firma", notas.stream().mapToLong(nota -> tieneFirma.test(nota) ? 1 : 0).sum(),
+                "notas_con_audio", notas.stream().mapToLong(nota -> tieneAudio(nota) ? 1 : 0).sum(),
+                "notas_con_firma", notas.stream().mapToLong(nota -> tieneFirma(nota) ? 1 : 0).sum(),
                 "medicos_participantes", notas.stream().map(HospitalizacionNota::getCreadoPor).distinct().count()
         );
     }
 
     @Override
     public Map<String, Long> contarNotasPorEstado(Long hospitalizacionId) {
-        return repository.contarNotasPorEstado(hospitalizacionId)
+        return notaRepository.contarNotasPorEstado(hospitalizacionId)
                 .stream()
                 .collect(Collectors.toMap(
                         arr -> (String) arr[0],
@@ -267,7 +284,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
     @Override
     public boolean existenNotasParaHospitalizacion(Long hospitalizacionId) {
-        return repository.findByHospitalizacionIdOrderByFecha(hospitalizacionId)
+        return notaRepository.findByHospitalizacionIdOrderByFecha(hospitalizacionId)
                 .stream()
                 .findAny()
                 .isPresent();
@@ -298,14 +315,14 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
 
     @Override
     public String generarNumeroNota(Long hospitalizacionId) {
-        var contador = repository.findByHospitalizacionIdOrderByFecha(hospitalizacionId).size() + 1;
+        var contador = notaRepository.findByHospitalizacionIdOrderByFecha(hospitalizacionId).size() + 1;
         return String.format("NOTA-%d-%03d", hospitalizacionId, contador);
     }
 
     // ===== 🔨 MÉTODOS PRIVADOS FUNCIONALES =====
 
     private HospitalizacionNota buscarNotaPorId(Long notaId) {
-        return repository.findById(notaId)
+        return notaRepository.findById(notaId)
                 .orElseThrow(() -> NotaNotFoundException.nota(notaId));
     }
 
@@ -320,44 +337,40 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     }
 
     private void limpiarAudioAnteriorSiExiste(HospitalizacionNotaDTO notaDTO) {
-        repository.findNotasBorradorPorHospitalizacion(notaDTO.getHospitalizacionId())
+        notaRepository.findNotasBorradorPorHospitalizacion(notaDTO.getHospitalizacionId())
                 .stream()
                 .filter(nota -> Objects.equals(nota.getCreadoPor(), notaDTO.getCreadoPor()))
-                .filter(tieneAudio)
+                .filter(this::tieneAudio)
                 .forEach(this::limpiarAudioDeNota);
     }
 
     private HospitalizacionNota prepararNuevaNota(HospitalizacionNotaDTO dto) {
-        var nota = toEntity.apply(dto);
         var ahora = LocalDateTime.now();
-
-        nota.setNumeroNota(generarNumeroNota(dto.getHospitalizacionId()));
-        nota.setEstado("01"); // Borrador
-        nota.setFechaNota(ahora);
-        nota.setCreadoEn(ahora);
-
-        return nota;
+        dto.setCreadoEn(ahora);
+        if (dto.getEstado() == null) {
+            dto.setEstado("01"); // Borrador por defecto
+        }
+        return toEntity.apply(dto);
     }
 
     private HospitalizacionNota actualizarCamposNota(HospitalizacionNota nota, HospitalizacionNotaDTO dto) {
-        var ahora = LocalDateTime.now();
-
-        Optional.ofNullable(dto.getTituloNota()).ifPresent(nota::setTituloNota);
-        Optional.ofNullable(dto.getContenidoNota()).ifPresent(nota::setContenidoNota);
-        Optional.ofNullable(dto.getTurno()).ifPresent(nota::setTurno);
-        Optional.ofNullable(dto.getSignosVitales()).ifPresent(nota::setSignosVitales);
-        Optional.ofNullable(dto.getFirmaDigital()).ifPresent(nota::setFirmaDigital);
-        Optional.ofNullable(dto.getAudioData()).ifPresent(nota::setAudioData);
-
-        nota.setActualizadoPor(dto.getActualizadoPor());
-        nota.setActualizadoEn(ahora);
-
-        return nota;
+        try {
+            nota.setTituloNota(dto.getTituloNota());
+            nota.setContenidoNota(dto.getContenidoNota());
+            nota.setSignosVitales(dto.getSignosVitales() != null ? objectMapper.writeValueAsString(dto.getSignosVitales()) : null);
+            nota.setFirmaDigital(dto.getFirmaDigital() != null ? objectMapper.writeValueAsString(dto.getFirmaDigital()) : null);
+            nota.setAudioData(dto.getAudioData() != null ? objectMapper.writeValueAsString(dto.getAudioData()) : null);
+            nota.setActualizadoPor(dto.getActualizadoPor());
+            nota.setActualizadoEn(LocalDateTime.now());
+            return nota;
+        } catch (JsonProcessingException e) {
+            throw new JsonInvalidoException("Error al convertir JSON a String", e);
+        }
     }
 
     private HospitalizacionNota validarYFinalizar(HospitalizacionNota nota) {
         // Validar firma si es requerida (lógica de negocio)
-        if (esEvolucion(nota) && !tieneFirma.test(nota)) {
+        if (esEvolucion(nota) && !tieneFirma(nota)) {
             throw NotaBusinessException.firmaRequerida(nota.getId());
         }
 
@@ -374,7 +387,7 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     private int limpiarAudioDeNota(HospitalizacionNota nota) {
         try {
             marcarAudioComoEliminado(nota);
-            repository.save(nota);
+            notaRepository.save(nota);
             log.debug("🧹 Audio limpiado de nota {}", nota.getId());
             return 1;
         } catch (Exception e) {
@@ -384,71 +397,81 @@ public class HospitalizacionNotaServiceImpl implements HospitalizacionNotaServic
     }
 
     private HospitalizacionNota marcarAudioComoEliminado(HospitalizacionNota nota) {
-        var audioActualizado = objectMapper.createObjectNode();
-        audioActualizado.put("tiene_audio", false);
-        audioActualizado.put("audio_eliminado", true);
-        audioActualizado.put("fecha_eliminacion", LocalDateTime.now().toString());
-
-        // Conservar transcripción si existe
-        Optional.ofNullable(nota.getAudioData())
-                .filter(audio -> audio.has("transcripcion"))
-                .ifPresent(audio -> audioActualizado.set("transcripcion", audio.get("transcripcion")));
-
-        nota.setAudioData(audioActualizado);
+        try {
+            JsonNode audioNode = objectMapper.readTree(nota.getAudioData());
+            ((com.fasterxml.jackson.databind.node.ObjectNode) audioNode).put("audio_eliminado", true);
+            nota.setAudioData(objectMapper.writeValueAsString(audioNode));
+        } catch (JsonProcessingException e) {
+            throw new JsonInvalidoException("Error al procesar el JSON del audio");
+        }
         return nota;
     }
 
-    private void validarJsonNode(String campo, JsonNode json) {
-        if (json != null) {
+    private void validarJsonNode(String campo, JsonNode jsonNode) {
+        if (jsonNode != null) {
             try {
-                objectMapper.treeToValue(json, Object.class);
+                // La validación ahora es más directa ya que ya tenemos el JsonNode
+                if (!jsonNode.isObject()) {
+                    throw new JsonInvalidoException("El campo " + campo + " debe ser un objeto JSON válido");
+                }
             } catch (Exception e) {
-                throw NotaValidationException.jsonInvalido(campo, e.getMessage());
+                throw new JsonInvalidoException("Error al validar el campo " + campo + ": " + e.getMessage());
             }
         }
     }
 
     private HospitalizacionNotaDTO convertirADTO(HospitalizacionNota entity) {
-        return HospitalizacionNotaDTO.builder()
-                .id(entity.getId())
-                .numeroNota(entity.getNumeroNota())
-                .hospitalizacionId(entity.getHospitalizacionId())
-                .numeroCuenta(entity.getNumeroCuenta())
-                .tipoNota(entity.getTipoNota())
-                .tituloNota(entity.getTituloNota())
-                .contenidoNota(entity.getContenidoNota())
-                .turno(entity.getTurno())
-                .fechaNota(entity.getFechaNota())
-                .estado(entity.getEstado())
-                .signosVitales(entity.getSignosVitales())
-                .firmaDigital(entity.getFirmaDigital())
-                .audioData(entity.getAudioData())
-                .creadoPor(entity.getCreadoPor())
-                .creadoEn(entity.getCreadoEn())
-                .actualizadoPor(entity.getActualizadoPor())
-                .actualizadoEn(entity.getActualizadoEn())
-                .build();
+        try {
+            return HospitalizacionNotaDTO.builder()
+                    .id(entity.getId())
+                    .numeroNota(entity.getNumeroNota())
+                    .hospitalizacionId(entity.getHospitalizacionId())
+                    .numeroCuenta(entity.getNumeroCuenta())
+                    .tipoNota(entity.getTipoNota())
+                    .tituloNota(entity.getTituloNota())
+                    .contenidoNota(entity.getContenidoNota())
+                    .signosVitales(entity.getSignosVitales() != null ? objectMapper.readTree(entity.getSignosVitales()) : null)
+                    .firmaDigital(entity.getFirmaDigital() != null ? objectMapper.readTree(entity.getFirmaDigital()) : null)
+                    .audioData(entity.getAudioData() != null ? objectMapper.readTree(entity.getAudioData()) : null)
+                    .estado(entity.getEstado())
+                    .creadoPor(entity.getCreadoPor())
+                    .creadoEn(entity.getCreadoEn())
+                    .actualizadoPor(entity.getActualizadoPor())
+                    .actualizadoEn(entity.getActualizadoEn())
+                    .build();
+        } catch (JsonProcessingException e) {
+            throw new JsonInvalidoException("Error al convertir String a JSON", e);
+        }
     }
 
     private HospitalizacionNota convertirAEntity(HospitalizacionNotaDTO dto) {
-        var entity = new HospitalizacionNota();
-        entity.setId(dto.getId());
-        entity.setNumeroNota(dto.getNumeroNota());
-        entity.setHospitalizacionId(dto.getHospitalizacionId());
-        entity.setNumeroCuenta(dto.getNumeroCuenta());
-        entity.setTipoNota(dto.getTipoNota());
-        entity.setTituloNota(dto.getTituloNota());
-        entity.setContenidoNota(dto.getContenidoNota());
-        entity.setTurno(dto.getTurno());
-        entity.setFechaNota(dto.getFechaNota());
-        entity.setEstado(dto.getEstado());
-        entity.setSignosVitales(dto.getSignosVitales());
-        entity.setFirmaDigital(dto.getFirmaDigital());
-        entity.setAudioData(dto.getAudioData());
-        entity.setCreadoPor(dto.getCreadoPor());
-        entity.setCreadoEn(dto.getCreadoEn());
-        entity.setActualizadoPor(dto.getActualizadoPor());
-        entity.setActualizadoEn(dto.getActualizadoEn());
-        return entity;
+        try {
+            return HospitalizacionNota.builder()
+                    .id(dto.getId())
+                    .numeroNota(dto.getNumeroNota())
+                    .hospitalizacionId(dto.getHospitalizacionId())
+                    .numeroCuenta(dto.getNumeroCuenta())
+                    .tipoNota(dto.getTipoNota())
+                    .tituloNota(dto.getTituloNota())
+                    .contenidoNota(dto.getContenidoNota())
+                    .signosVitales(dto.getSignosVitales() != null ? objectMapper.writeValueAsString(dto.getSignosVitales()) : null)
+                    .firmaDigital(dto.getFirmaDigital() != null ? objectMapper.writeValueAsString(dto.getFirmaDigital()) : null)
+                    .audioData(dto.getAudioData() != null ? objectMapper.writeValueAsString(dto.getAudioData()) : null)
+                    .estado(dto.getEstado())
+                    .creadoPor(dto.getCreadoPor())
+                    .creadoEn(dto.getCreadoEn())
+                    .actualizadoPor(dto.getActualizadoPor())
+                    .actualizadoEn(dto.getActualizadoEn())
+                    .build();
+        } catch (JsonProcessingException e) {
+            throw new JsonInvalidoException("Error al convertir JSON a String", e);
+        }
+    }
+
+    /**
+     * Verifica si existe una nota en borrador para una hospitalización y médico específicos
+     */
+    private boolean existeNotaBorradorPorHospitalizacion(Long hospitalizacionId, Long medicoId) {
+        return notaRepository.existeNotaBorradorPorHospitalizacion(hospitalizacionId, medicoId);
     }
 }
