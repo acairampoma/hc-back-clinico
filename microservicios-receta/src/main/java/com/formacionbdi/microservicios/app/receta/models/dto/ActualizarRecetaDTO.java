@@ -7,13 +7,14 @@ import lombok.Builder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import javax.validation.constraints.Size;
-import java.time.LocalDate;
+import jakarta.validation.constraints.Size;
+import java.time.LocalDate; // ✅ CORRECTO - Solo fecha, no hora
 import java.util.List;
 
 /**
- * 🔄 DTO para ACTUALIZAR Receta - Sin validaciones obligatorias
- * Solo los campos que se quieren modificar
+ * 🇵🇪 DTO para ACTUALIZAR Receta - CORREGIDO por Alan Cairampoma
+ * ✅ fechaVencimiento es LocalDate (coherente con BD - solo fecha)
+ * ✅ Sin validaciones obligatorias - Solo campos a modificar
  */
 @Data
 @NoArgsConstructor
@@ -29,11 +30,13 @@ public class ActualizarRecetaDTO {
     @JsonProperty("indicaciones_generales")
     private String indicacionesGenerales;
 
+    // 🔥 CORRECTO: LocalDate para fecha_vencimiento (solo fecha)
     @JsonProperty("fecha_vencimiento")
     private LocalDate fechaVencimiento;
 
-    @JsonProperty("observaciones")
-    private String observaciones;
+    // ❌ QUITADO: observaciones (no existe en BD)
+    // @JsonProperty("observaciones")
+    // private String observaciones;
 
     // ===== OPERACIONES CON MEDICAMENTOS =====
 
@@ -44,9 +47,9 @@ public class ActualizarRecetaDTO {
     private List<ModificarMedicamentoDTO> modificarMedicamentos;
 
     @JsonProperty("eliminar_medicamentos")
-    private List<Long> eliminarMedicamentos; // IDs de medicamentos a eliminar
+    private List<Long> eliminarMedicamentos;
 
-    // ===== DTOs ANIDADOS PARA MEDICAMENTOS =====
+    // ===== DTOs ANIDADOS =====
 
     @Data
     @Builder
@@ -94,7 +97,7 @@ public class ActualizarRecetaDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ModificarMedicamentoDTO {
         @JsonProperty("id")
-        private Long id; // ID del medicamento a modificar
+        private Long id;
 
         @JsonProperty("dosis")
         private String dosis;
@@ -130,7 +133,6 @@ public class ActualizarRecetaDTO {
         return !tieneOperacionesMedicamentos() &&
                 (diagnosticoPrincipal != null ||
                         indicacionesGenerales != null ||
-                        fechaVencimiento != null ||
-                        observaciones != null);
+                        fechaVencimiento != null);
     }
 }

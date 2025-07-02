@@ -1,0 +1,296 @@
+{
+	"info": {
+		"_postman_id": "f8a7b6c5-4d3e-2f1a-0b9c-8d7e6f5a4b3c",
+		"name": "Microservicio OAuth2 API",
+		"description": "Colección para probar los endpoints de autenticación y autorización del microservicio OAuth2.\n\nCreado por Alan Cairampoma - Lima, Perú",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Obtener token (password grant)",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "gateway-client",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "admin",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "read write",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/oauth2/password-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth2",
+								"password-token"
+							]
+						},
+						"description": "Obtiene un token de acceso utilizando el flujo password grant type. Requiere autenticación básica del cliente OAuth2 y las credenciales del usuario."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener token (client credentials)",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "gateway-client",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "read write",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/oauth2/token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth2",
+								"token"
+							]
+						},
+						"description": "Obtiene un token de acceso utilizando el flujo client credentials. Requiere autenticación básica del cliente OAuth2."
+					},
+					"response": []
+				},
+				{
+					"name": "Refrescar token",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "gateway-client",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "refresh_token",
+									"type": "text"
+								},
+								{
+									"key": "refresh_token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+									"type": "text",
+									"description": "Reemplazar con un refresh_token válido"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/oauth2/token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth2",
+								"token"
+							]
+						},
+						"description": "Refresca un token de acceso expirado utilizando un refresh_token válido."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para autenticación y obtención de tokens"
+		},
+		{
+			"name": "Información de Usuario",
+			"item": [
+				{
+					"name": "Obtener información del usuario actual",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+									"type": "string",
+									"description": "Reemplazar con un access_token válido"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oauth2/user-info",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth2",
+								"user-info"
+							]
+						},
+						"description": "Obtiene información del usuario autenticado con el token proporcionado."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para obtener información de usuario"
+		},
+		{
+			"name": "Sistema",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oauth2/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth2",
+								"health"
+							]
+						},
+						"description": "Verifica el estado del microservicio OAuth2"
+					},
+					"response": []
+				},
+				{
+					"name": "Info Microservicio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oauth2/info",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oauth2",
+								"info"
+							]
+						},
+						"description": "Obtiene información detallada sobre el microservicio OAuth2"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para monitoreo y diagnóstico del sistema"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:8090",
+			"type": "string"
+		}
+	]
+}

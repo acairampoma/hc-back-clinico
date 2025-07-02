@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -90,4 +90,3 @@ public class UserRole implements Serializable {
         return expiresAt == null || LocalDateTime.now().isBefore(expiresAt);
     }
 }
-

@@ -8,15 +8,47 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="microservicios-listas" />
-        <module name="microservicios-gateway" />
-        <module name="microservicios-orden" />
-        <module name="microservicios-test" />
         <module name="microservicios-eureka" />
+        <module name="microservicios-hl7" />
+        <module name="microservicios-gateway" />
         <module name="microservicios-usuarios" />
-        <module name="microservicios-receta" />
         <module name="microservicios-notas" />
         <module name="microservicios-catalogos" />
+        <module name="commons-response" />
         <module name="microservicios-oauth2" />
+      </profile>
+      <profile name="Annotation profile for microservicios-hl7-simulator" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+        </processorPath>
+        <module name="microservicios-hl7-simulator" />
+      </profile>
+      <profile name="Annotation profile for microservicios-receta" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.26/lombok-1.18.26.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.5.5.Final/mapstruct-processor-1.5.5.Final.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.5.5.Final/mapstruct-1.5.5.Final.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok-mapstruct-binding/0.2.0/lombok-mapstruct-binding-0.2.0.jar" />
+        </processorPath>
+        <module name="microservicios-receta" />
+      </profile>
+      <profile name="Annotation profile for microservicios-orden" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.28/lombok-1.18.28.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.5.5.Final/mapstruct-processor-1.5.5.Final.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.5.5.Final/mapstruct-1.5.5.Final.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok-mapstruct-binding/0.2.0/lombok-mapstruct-binding-0.2.0.jar" />
+        </processorPath>
+        <module name="microservicios-orden" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -25,7 +57,9 @@
       <module name="commons-microservicios" target="12" />
       <module name="microservicios-cursos" target="12" />
       <module name="microservicios-examenes" target="12" />
+      <module name="microservicios-parent" target="1.5" />
       <module name="microservicios-respuestas" target="12" />
+      <module name="microservicios-test" target="11" />
       <module name="microservicios-zuul" target="12" />
       <module name="msvc-oauth" target="11" />
     </bytecodeTargetLevel>
@@ -35,11 +69,14 @@
       <module name="commons-alumnos" options="-parameters" />
       <module name="commons-examenes" options="-parameters" />
       <module name="commons-microservicios" options="-parameters" />
+      <module name="commons-response" options="-parameters" />
       <module name="microservicios-catalogos" options="-parameters" />
       <module name="microservicios-cursos" options="-parameters" />
       <module name="microservicios-eureka" options="-parameters" />
       <module name="microservicios-examenes" options="-parameters" />
       <module name="microservicios-gateway" options="-parameters" />
+      <module name="microservicios-hl7" options="-parameters" />
+      <module name="microservicios-hl7-simulator" options="-parameters" />
       <module name="microservicios-listas" options="-parameters" />
       <module name="microservicios-notas" options="-parameters" />
       <module name="microservicios-oauth2" options="-parameters" />

@@ -1,0 +1,558 @@
+{
+	"info": {
+		"_postman_id": "e5a7c8f9-2d3b-4e6a-b8c7-9d6e5f4c3b2a",
+		"name": "Microservicio Notas API",
+		"description": "Colección para probar todos los endpoints del microservicio de notas de hospitalización.\n\nCreado por Alan Cairampoma - Lima, Perú",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Consultas de Notas",
+			"item": [
+				{
+					"name": "Obtener notas por hospitalización",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/hospitalizacion/123",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"hospitalizacion",
+								"123"
+							]
+						},
+						"description": "Obtiene todas las notas de una hospitalización específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener notas borrador por hospitalización",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/hospitalizacion/123?estado=borrador",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"hospitalizacion",
+								"123"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "borrador"
+								}
+							]
+						},
+						"description": "Obtiene todas las notas en estado borrador de una hospitalización"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener notas finalizadas por hospitalización",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/hospitalizacion/123?estado=finalizada",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"hospitalizacion",
+								"123"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "finalizada"
+								}
+							]
+						},
+						"description": "Obtiene todas las notas finalizadas de una hospitalización"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener nota por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/456",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"456"
+							]
+						},
+						"description": "Obtiene una nota específica por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar notas por número de cuenta",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/cuenta/ABC12345",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"cuenta",
+								"ABC12345"
+							]
+						},
+						"description": "Busca notas por número de cuenta del paciente"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar notas por tipo en hospitalización",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/hospitalizacion/123/tipo/01",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"hospitalizacion",
+								"123",
+								"tipo",
+								"01"
+							]
+						},
+						"description": "Busca notas por tipo en una hospitalización (01=Evolución, otros=Interconsulta)"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar notas por médico y fechas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/medico/789/fechas?fechaInicio=2023-01-01T00:00:00Z&fechaFin=2023-12-31T23:59:59Z",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"medico",
+								"789",
+								"fechas"
+							],
+							"query": [
+								{
+									"key": "fechaInicio",
+									"value": "2023-01-01T00:00:00Z"
+								},
+								{
+									"key": "fechaFin",
+									"value": "2023-12-31T23:59:59Z"
+								}
+							]
+						},
+						"description": "Busca notas de un médico específico en un rango de fechas"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para consultar notas de hospitalización"
+		},
+		{
+			"name": "Operaciones CRUD",
+			"item": [
+				{
+					"name": "Crear nota",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"hospitalizacionId\": 123,\n    \"medicoId\": 789,\n    \"tipoNota\": \"01\",\n    \"numeroCuenta\": \"ABC12345\",\n    \"contenido\": \"Paciente presenta mejoría en signos vitales. Se mantiene tratamiento actual.\",\n    \"estado\": \"BORRADOR\",\n    \"tieneAudio\": false\n}"
+						},
+						"url": {
+							"raw": "localhost:8004/api/notas/crear",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"crear"
+							]
+						},
+						"description": "Crea una nueva nota de hospitalización"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar nota",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"hospitalizacionId\": 123,\n    \"medicoId\": 789,\n    \"tipoNota\": \"01\",\n    \"numeroCuenta\": \"ABC12345\",\n    \"contenido\": \"Paciente presenta mejoría significativa en signos vitales. Se ajusta tratamiento.\",\n    \"estado\": \"BORRADOR\",\n    \"tieneAudio\": false\n}"
+						},
+						"url": {
+							"raw": "localhost:8004/api/notas/456?medicoId=789",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"456"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "789"
+								}
+							]
+						},
+						"description": "Actualiza una nota existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Finalizar nota",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/456/finalizar?medicoId=789",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"456",
+								"finalizar"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "789"
+								}
+							]
+						},
+						"description": "Cambia el estado de una nota de borrador a finalizada"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar nota",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/456?medicoId=789",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"456"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "789"
+								}
+							]
+						},
+						"description": "Elimina una nota específica"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para crear, actualizar, finalizar y eliminar notas"
+		},
+		{
+			"name": "Gestión de Audio",
+			"item": [
+				{
+					"name": "Verificar disponibilidad de audio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/456/audio/disponible",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"456",
+								"audio",
+								"disponible"
+							]
+						},
+						"description": "Verifica si una nota tiene audio disponible"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar audio de nota",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/456/audio?medicoId=789",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"456",
+								"audio"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "789"
+								}
+							]
+						},
+						"description": "Elimina el audio asociado a una nota"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestionar el audio de las notas"
+		},
+		{
+			"name": "Validación y Estadísticas",
+			"item": [
+				{
+					"name": "Verificar si médico puede crear nota",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/medico/789/hospitalizacion/123/puede-crear",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"medico",
+								"789",
+								"hospitalizacion",
+								"123",
+								"puede-crear"
+							]
+						},
+						"description": "Verifica si un médico puede crear una nueva nota para una hospitalización"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener estadísticas de hospitalización",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/hospitalizacion/123/estadisticas",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"hospitalizacion",
+								"123",
+								"estadisticas"
+							]
+						},
+						"description": "Obtiene estadísticas de notas para una hospitalización"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para validación y estadísticas de notas"
+		},
+		{
+			"name": "Generación de PDF",
+			"item": [
+				{
+					"name": "Generar PDF de nota",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/456/pdf",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"456",
+								"pdf"
+							]
+						},
+						"description": "Genera un PDF de una nota específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Generar PDF consolidado de hospitalización",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/hospitalizacion/123/pdf",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"hospitalizacion",
+								"123",
+								"pdf"
+							]
+						},
+						"description": "Genera un PDF consolidado con todas las notas de una hospitalización"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para generación de documentos PDF"
+		},
+		{
+			"name": "Sistema",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"health"
+							]
+						},
+						"description": "Verifica el estado del microservicio"
+					},
+					"response": []
+				},
+				{
+					"name": "Información del Microservicio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8004/api/notas/info",
+							"host": [
+								"localhost"
+							],
+							"port": "8004",
+							"path": [
+								"api",
+								"notas",
+								"info"
+							]
+						},
+						"description": "Obtiene información detallada sobre el microservicio"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para monitoreo y diagnóstico del sistema"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:8004/api",
+			"type": "string"
+		}
+	]
+}

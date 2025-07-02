@@ -1,0 +1,12 @@
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\models\entity\HL7MessageOutbound.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\models\entity\HL7Message.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\controllers\HL7Controller.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\config\HL7Properties.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\config\HL7ServerConfig.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\services\HL7GeneratorService.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\repository\HL7EquipoConfigRepository.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\repository\HL7MessageOutboundRepository.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\Hl7Application.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\services\HL7ProcessorService.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\repository\HL7MessageRepository.java
+C:\Users\acairamp\Documents\proyecto\Curso\microservicios\microservicios-hl7\src\main\java\com\formacionbdi\microservicios\app\hl7\models\entity\HL7EquipoConfig.java

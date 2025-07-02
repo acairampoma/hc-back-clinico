@@ -1,0 +1,517 @@
+{
+	"info": {
+		"_postman_id": "e7a6b5c4-3d2e-1f0a-9b8c-7d6e5f4a3b2c",
+		"name": "Microservicio Órdenes API",
+		"description": "Colección para probar todos los endpoints del microservicio de órdenes médicas.\n\nCreado por Alan Cairampoma - Lima, Perú",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "CRUD Órdenes",
+			"item": [
+				{
+					"name": "Crear nueva orden",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoOrden\": \"LAB\",\n    \"tipoOrigen\": \"CONSULTA\",\n    \"origenId\": 123,\n    \"pacienteId\": 456,\n    \"medicoId\": 789,\n    \"diagnostico\": \"Evaluación de rutina\",\n    \"prioridad\": \"NORMAL\",\n    \"observaciones\": \"Paciente en ayunas\",\n    \"examenes\": [\n        {\n            \"examenId\": 1,\n            \"cantidad\": 1,\n            \"observaciones\": \"Muestra en ayunas\"\n        },\n        {\n            \"examenId\": 2,\n            \"cantidad\": 1,\n            \"observaciones\": \"Control mensual\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "localhost:8006/api/ordenes/crear",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"crear"
+							]
+						},
+						"description": "Crea una nueva orden médica con sus exámenes asociados"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener orden por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"1"
+							]
+						},
+						"description": "Obtiene una orden completa por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener orden por número",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/numero/ORD-20250629-001",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"numero",
+								"ORD-20250629-001"
+							]
+						},
+						"description": "Obtiene una orden completa por su número de orden"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar orden",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"diagnostico\": \"Evaluación de rutina actualizada\",\n    \"prioridad\": \"ALTA\",\n    \"observaciones\": \"Paciente en ayunas - actualizado\"\n}"
+						},
+						"url": {
+							"raw": "localhost:8006/api/ordenes/1?medicoId=789",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"1"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "789"
+								}
+							]
+						},
+						"description": "Actualiza una orden existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Cambiar estado de orden",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"estado\": \"COMPLETADA\",\n    \"observaciones\": \"Todos los exámenes realizados\"\n}"
+						},
+						"url": {
+							"raw": "localhost:8006/api/ordenes/1/estado",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"1",
+								"estado"
+							]
+						},
+						"description": "Cambia el estado de una orden"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar orden",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/1?medicoId=789",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"1"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "789"
+								}
+							]
+						},
+						"description": "Elimina lógicamente una orden"
+					},
+					"response": []
+				}
+			],
+			"description": "Operaciones CRUD para órdenes médicas"
+		},
+		{
+			"name": "Consultas y Filtros",
+			"item": [
+				{
+					"name": "Listar todas las órdenes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes"
+							]
+						},
+						"description": "Obtiene todas las órdenes médicas"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar órdenes por origen",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes?tipoOrigen=CONSULTA&origenId=123",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes"
+							],
+							"query": [
+								{
+									"key": "tipoOrigen",
+									"value": "CONSULTA"
+								},
+								{
+									"key": "origenId",
+									"value": "123"
+								}
+							]
+						},
+						"description": "Obtiene órdenes filtradas por tipo de origen y ID de origen"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener órdenes por paciente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/paciente/456",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"paciente",
+								"456"
+							]
+						},
+						"description": "Obtiene todas las órdenes de un paciente específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener órdenes por médico",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/medico/789",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"medico",
+								"789"
+							]
+						},
+						"description": "Obtiene todas las órdenes creadas por un médico específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener órdenes por estado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/estado/PENDIENTE",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"estado",
+								"PENDIENTE"
+							]
+						},
+						"description": "Obtiene todas las órdenes con un estado específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener órdenes por prioridad",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/prioridad/ALTA",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"prioridad",
+								"ALTA"
+							]
+						},
+						"description": "Obtiene todas las órdenes con una prioridad específica"
+					},
+					"response": []
+				}
+			],
+			"description": "Consultas y filtros para órdenes médicas"
+		},
+		{
+			"name": "Gestión de Exámenes",
+			"item": [
+				{
+					"name": "Obtener exámenes de orden",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/1/examenes",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"1",
+								"examenes"
+							]
+						},
+						"description": "Obtiene todos los exámenes asociados a una orden"
+					},
+					"response": []
+				},
+				{
+					"name": "Agregar examen a orden",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"examenId\": 3,\n    \"cantidad\": 1,\n    \"observaciones\": \"Examen adicional\"\n}"
+						},
+						"url": {
+							"raw": "localhost:8006/api/ordenes/1/examenes?medicoId=789",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"1",
+								"examenes"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "789"
+								}
+							]
+						},
+						"description": "Agrega un nuevo examen a una orden existente"
+					},
+					"response": []
+				}
+			],
+			"description": "Operaciones relacionadas con exámenes en órdenes"
+		},
+		{
+			"name": "Estadísticas y Reportes",
+			"item": [
+				{
+					"name": "Estadísticas por estado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/estadisticas/estados",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"estadisticas",
+								"estados"
+							]
+						},
+						"description": "Obtiene estadísticas de órdenes agrupadas por estado"
+					},
+					"response": []
+				},
+				{
+					"name": "Exámenes más solicitados",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/estadisticas/examenes-populares",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"estadisticas",
+								"examenes-populares"
+							]
+						},
+						"description": "Obtiene los exámenes más solicitados en las órdenes"
+					},
+					"response": []
+				}
+			],
+			"description": "Estadísticas y reportes sobre órdenes médicas"
+		},
+		{
+			"name": "Sistema",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"health"
+							]
+						},
+						"description": "Verifica el estado del microservicio"
+					},
+					"response": []
+				},
+				{
+					"name": "Info Microservicio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8006/api/ordenes/info",
+							"host": [
+								"localhost"
+							],
+							"port": "8006",
+							"path": [
+								"api",
+								"ordenes",
+								"info"
+							]
+						},
+						"description": "Obtiene información detallada sobre el microservicio"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para monitoreo y diagnóstico del sistema"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:8006/api",
+			"type": "string"
+		}
+	]
+}

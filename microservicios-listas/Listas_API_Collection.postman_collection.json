@@ -1,0 +1,617 @@
+{
+	"info": {
+		"_postman_id": "f8a9b7c6-5d4e-3f2a-1b0c-9d8e7f6a5b4c",
+		"name": "Microservicio Listas API",
+		"description": "Colección para probar todos los endpoints del microservicio de listas hospitalarias.\n\nCreado por Alan Cairampoma - Lima, Perú",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Estructura Hospitalaria",
+			"item": [
+				{
+					"name": "Obtener todas las estructuras",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/estructuras",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"estructuras"
+							]
+						},
+						"description": "Obtiene todas las estructuras hospitalarias configuradas"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener primera estructura",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/estructura",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"estructura"
+							]
+						},
+						"description": "Obtiene la primera estructura hospitalaria disponible"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener estructura por hospital ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/estructura/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"estructura",
+								"1"
+							]
+						},
+						"description": "Obtiene la estructura hospitalaria para un hospital específico por ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener estructura básica",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/estructura/basica",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"estructura",
+								"basica"
+							]
+						},
+						"description": "Obtiene la estructura básica sin detalle de camas"
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar existencia de estructura",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/estructura/1/existe",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"estructura",
+								"1",
+								"existe"
+							]
+						},
+						"description": "Verifica si existe estructura para un hospital específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener estadísticas de disponibilidad",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/estadisticas/disponibilidad",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"estadisticas",
+								"disponibilidad"
+							]
+						},
+						"description": "Obtiene estadísticas de disponibilidad de camas"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para consultar la estructura hospitalaria"
+		},
+		{
+			"name": "Pacientes por Cama",
+			"item": [
+				{
+					"name": "Obtener todas las camas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/camas",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"camas"
+							]
+						},
+						"description": "Obtiene todas las camas con información de pacientes"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener camas ocupadas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/camas/ocupadas",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"camas",
+								"ocupadas"
+							]
+						},
+						"description": "Obtiene solo las camas ocupadas (con pacientes)"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener camas disponibles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/camas/disponibles",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"camas",
+								"disponibles"
+							]
+						},
+						"description": "Obtiene solo las camas disponibles (sin pacientes)"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener cama por número",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/cama/A101",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"cama",
+								"A101"
+							]
+						},
+						"description": "Obtiene información de una cama específica por número"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener camas por rango",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/camas/rango?start=A101&end=A110",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"camas",
+								"rango"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "A101"
+								},
+								{
+									"key": "end",
+									"value": "A110"
+								}
+							]
+						},
+						"description": "Obtiene camas en un rango específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar si cama está ocupada",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/cama/A101/ocupada",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"cama",
+								"A101",
+								"ocupada"
+							]
+						},
+						"description": "Verifica si una cama específica está ocupada"
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar si existe cama",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/cama/A101/existe",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"cama",
+								"A101",
+								"existe"
+							]
+						},
+						"description": "Verifica si existe una cama con el número especificado"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para consultar información de camas"
+		},
+		{
+			"name": "Búsqueda de Pacientes",
+			"item": [
+				{
+					"name": "Buscar paciente por DNI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/buscar/dni/12345678",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"buscar",
+								"dni",
+								"12345678"
+							]
+						},
+						"description": "Busca un paciente por su DNI"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar pacientes por nombre",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/buscar/nombre/Juan",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"buscar",
+								"nombre",
+								"Juan"
+							]
+						},
+						"description": "Busca pacientes por nombre (búsqueda parcial)"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar pacientes por médico",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/buscar/medico/Dr. Pérez",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"buscar",
+								"medico",
+								"Dr. Pérez"
+							]
+						},
+						"description": "Busca pacientes por médico tratante"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar con filtros múltiples",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/buscar?estado=OCUPADA&piso=2&especialidad=CARDIOLOGIA",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "OCUPADA"
+								},
+								{
+									"key": "piso",
+									"value": "2"
+								},
+								{
+									"key": "especialidad",
+									"value": "CARDIOLOGIA"
+								}
+							]
+						},
+						"description": "Busca camas y pacientes con filtros múltiples"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para buscar pacientes"
+		},
+		{
+			"name": "Estadísticas",
+			"item": [
+				{
+					"name": "Obtener estadísticas de ocupación",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/estadisticas/ocupacion",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"estadisticas",
+								"ocupacion"
+							]
+						},
+						"description": "Obtiene estadísticas completas de ocupación de camas"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener conteos de camas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/estadisticas/conteos",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"estadisticas",
+								"conteos"
+							]
+						},
+						"description": "Obtiene el conteo de camas por estado"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener porcentajes de ocupación",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/estadisticas/porcentajes",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"estadisticas",
+								"porcentajes"
+							]
+						},
+						"description": "Obtiene resumen de ocupación por porcentajes"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para obtener estadísticas"
+		},
+		{
+			"name": "Sistema",
+			"item": [
+				{
+					"name": "Health Check - Listas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"health"
+							]
+						},
+						"description": "Health Check del microservicio de listas"
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check - Pacientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"health"
+							]
+						},
+						"description": "Health Check específico del módulo de pacientes"
+					},
+					"response": []
+				},
+				{
+					"name": "Información - Listas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/listas/info",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"listas",
+								"info"
+							]
+						},
+						"description": "Información del microservicio de listas"
+					},
+					"response": []
+				},
+				{
+					"name": "Información - Pacientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8005/api/pacientes/info",
+							"host": [
+								"localhost"
+							],
+							"port": "8005",
+							"path": [
+								"api",
+								"pacientes",
+								"info"
+							]
+						},
+						"description": "Información del módulo de pacientes"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para monitoreo y diagnóstico del sistema"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:8005/api",
+			"type": "string"
+		}
+	]
+}

@@ -7,7 +7,7 @@ spring:
         locator:
           enabled: false
 
-      # 🌐 CONFIGURACIÓN CORS SIMPLE
+      # CONFIGURACIÓN CORS SIMPLE
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -22,7 +22,7 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
 
-      # 🛣️ CONFIGURACIÓN DE RUTAS - CORREGIDO
+      # CONFIGURACIÓN DE RUTAS - CORREGIDO
       routes:
         # OAuth2 Authorization Server
         - id: microservicio-oauth2
@@ -39,6 +39,14 @@ spring:
             - Path=/.well-known/**
           filters:
             - PrefixPath=/auth
+
+        # Swagger docs para OAuth2
+        - id: microservicio-oauth2-swagger
+          uri: lb://microservicio-oauth2
+          predicates:
+            - Path=/oauth2/v3/api-docs
+          filters:
+            - RewritePath=/oauth2/v3/api-docs, /auth/v3/api-docs
 
         # Usuarios - clientes OAuth específicos
         - id: microservicio-usuarios-clients
@@ -72,11 +80,27 @@ spring:
           filters:
             - StripPrefix=2
 
+        # Swagger docs para Listas - Configuración corregida
+        - id: microservicio-listas-swagger
+          uri: lb://microservicio-listas
+          predicates:
+            - Path=/api/listas/v3/api-docs
+          filters:
+            - StripPrefix=2
+
         # Pacientes (usando microservicio-listas)
         - id: microservicio-pacientes
           uri: lb://microservicio-listas
           predicates:
             - Path=/api/pacientes/**
+          filters:
+            - StripPrefix=1
+
+        # Swagger docs para Pacientes - Configuración corregida
+        - id: microservicio-pacientes-swagger
+          uri: lb://microservicio-listas
+          predicates:
+            - Path=/api/pacientes/v3/api-docs
           filters:
             - StripPrefix=1
 
@@ -86,7 +110,15 @@ spring:
           predicates:
             - Path=/api/notas/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
+
+        # Swagger docs para Notas - Configuración exactamente igual a Listas/Usuarios
+        - id: microservicio-notas-swagger
+          uri: lb://microservicio-notas
+          predicates:
+            - Path=/api/notas/v3/api-docs
+          filters:
+            - StripPrefix=2
 
         # Recetas microservice
         - id: microservicio-receta
@@ -94,7 +126,15 @@ spring:
           predicates:
             - Path=/api/recetas/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
+
+        # Swagger docs para Recetas - Configuración exactamente igual a Listas/Usuarios
+        - id: microservicio-receta-swagger
+          uri: lb://microservicio-receta
+          predicates:
+            - Path=/api/recetas/v3/api-docs
+          filters:
+            - StripPrefix=2
 
         # Órdenes microservice
         - id: microservicio-orden
@@ -112,7 +152,7 @@ spring:
           filters:
             - StripPrefix=1
 
-  # ✨ CONFIGURACIÓN JWT SECURITY
+  # CONFIGURACIÓN JWT SECURITY
   security:
     oauth2:
       resourceserver:
@@ -132,7 +172,7 @@ eureka:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${random.value}
 
-# ✨ CONFIGURACIÓN JWT PERSONALIZADA
+# CONFIGURACIÓN JWT PERSONALIZADA
 oauth2:
   jwk-set-uri: http://localhost:8082/auth/.well-known/jwks.json
 
@@ -141,6 +181,30 @@ management:
     web:
       exposure:
         include: "*"
+
+# CONFIGURACIÓN SPRINGDOC OPENAPI/SWAGGER
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: API Gateway
+      - url: /api/usuarios/v3/api-docs
+        name: Usuarios
+      - url: /api/listas/v3/api-docs
+        name: Listas
+      - url: /api/notas/v3/api-docs
+        name: Notas
+      - url: /api/recetas/v3/api-docs
+        name: Recetas
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  cache:
+    disabled: true
+  webjars:
+    prefix: /webjars
 
 logging:
   level:

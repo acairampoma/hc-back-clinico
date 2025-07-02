@@ -1,19 +1,60 @@
 spring:
   application:
     name: microservicio-receta
+
+  # ===== 🔥 CONFIGURACIÓN POSTGRESQL =====
   datasource:
     url: jdbc:postgresql://localhost:5432/bd_hdigital
     username: postgres
     password: 123456
     driver-class-name: org.postgresql.Driver
+
+    # 🚀 HIKARI OPTIMIZADO
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 5
+      minimum-idle: 2
+      pool-name: RecetasHikariPool
+      connection-test-query: SELECT 1
+      validation-timeout: 3000
+      leak-detection-threshold: 60000
+      auto-commit: true
+
+  # ===== 🔧 JPA/HIBERNATE =====
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
-    generate-ddl: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: none
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
         jdbc:
+          time_zone: America/Lima
           lob:
             non_contextual_creation: true
+        default_schema: public
+
+  # ===== 🔧 JACKSON CONFIGURATION PARA PERÚ =====
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      write-dates-with-zone-id: false
+      write-date-timestamps-as-nanoseconds: false
+    deserialization:
+      fail-on-unknown-properties: false
+      adjust-dates-to-context-time-zone: false
+      read-date-timestamps-as-nanoseconds: false
+    # 🇵🇪 PERÚ - Zona horaria Lima
+    time-zone: America/Lima
+    # 🚀 CRUCIAL: Sin formato específico para manejar múltiples formatos
+    default-property-inclusion: non_null
+
+  # ===== 🌐 SPRING CLOUD 2022 =====
   cloud:
     loadbalancer:
       ribbon:
@@ -22,15 +63,46 @@ spring:
 server:
   port: 8005
 
+# ===== 🌐 EUREKA OPTIMIZADO =====
 eureka:
   instance:
-    instance-id: ${spring.application.name}:${random.value}
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
+    hostname: localhost
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+    fetch-registry: true
+    register-with-eureka: true
 
+# ===== 📊 LOGGING DETALLADO =====
 logging:
+  pattern:
+    dateformat: yyyy-MM-dd HH:mm:ss
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   level:
+    com.formacionbdi.microservicios.app.receta: INFO
     org:
       hibernate:
-        SQL: debug
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE
+    root: INFO
+
+# ===== 🎯 CONFIGURACIÓN RECETAS =====
+recetas:
+  config:
+    max-medicamentos-por-receta: 10
+    dias-vencimiento-default: 30
+    cantidad-maxima-por-medicamento: 2
+    auto-firma-habilitada: true
+
+# ===== 📚 CONFIGURACIÓN SPRINGDOC OPENAPI =====
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  packages-to-scan: com.formacionbdi.microservicios.app.receta.controllers

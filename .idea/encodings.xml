@@ -4,11 +4,15 @@
     <file url="file://$PROJECT_DIR$/commons-alumnos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/commons-examenes/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/commons-microservicios/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/commons-response/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-catalogos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-cursos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-eureka/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-examenes/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-gateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/microservicios-hl7-simulator/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/microservicios-hl7-simulator/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/microservicios-hl7/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-listas/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-notas/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-oauth2/src/main/java" charset="UTF-8" />
@@ -19,5 +23,7 @@
     <file url="file://$PROJECT_DIR$/microservicios-usuarios/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservicios-zuul/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/msvc-oauth/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>
 </project>

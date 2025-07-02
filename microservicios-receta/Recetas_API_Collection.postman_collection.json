@@ -1,0 +1,416 @@
+{
+	"info": {
+		"_postman_id": "f5a3d8e7-9c5b-4c2e-a5d2-3f8b9e7c1d6a",
+		"name": "Microservicio Recetas API",
+		"description": "Colección para probar todos los endpoints del microservicio de recetas médicas.\n\nCreado por Alan Cairampoma - Lima, Perú",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Consultas",
+			"item": [
+				{
+					"name": "Obtener recetas por origen",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas?tipo_origen=HOS&origen_id=123",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas"
+							],
+							"query": [
+								{
+									"key": "tipo_origen",
+									"value": "HOS",
+									"description": "HOS=Hospitalización, ACT=Acto Médico, EME=Emergencia"
+								},
+								{
+									"key": "origen_id",
+									"value": "123",
+									"description": "ID del origen (hospitalización, acto médico, etc.)"
+								}
+							]
+						},
+						"description": "Obtiene recetas por tipo de origen y origen ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener receta por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"1"
+							]
+						},
+						"description": "Obtiene receta específica por ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener receta por número",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/numero/REC-2025-00001",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"numero",
+								"REC-2025-00001"
+							]
+						},
+						"description": "Obtiene receta por número de receta"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener recetas por paciente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/paciente/123",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"paciente",
+								"123"
+							]
+						},
+						"description": "Obtiene todas las recetas de un paciente"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de consulta de recetas"
+		},
+		{
+			"name": "Operaciones CRUD",
+			"item": [
+				{
+					"name": "Crear receta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paciente_id\": 123,\n    \"medico_id\": 456,\n    \"tipo_origen\": \"ACT\",\n    \"origen_id\": 789,\n    \"fecha_receta\": \"2025-06-29T16:53:23\",\n    \"fecha_vencimiento\": \"2025-07-29\",\n    \"diagnostico_principal\": \"J00\",\n    \"indicaciones_generales\": \"Tomar medicamentos según indicación\",\n    \"firmada\": \"S\",\n    \"creado_por\": 456,\n    \"medicamentos\": [\n        {\n            \"medicamento_id\": 101,\n            \"dosis\": \"1 tableta\",\n            \"frecuencia\": \"cada 8 horas\",\n            \"duracion\": \"7 días\",\n            \"cantidad_total\": 21,\n            \"via_administracion\": \"VO\",\n            \"con_alimentos\": \"S\",\n            \"indicaciones\": \"Tomar después de las comidas\"\n        },\n        {\n            \"medicamento_id\": 102,\n            \"dosis\": \"10 ml\",\n            \"frecuencia\": \"cada 12 horas\",\n            \"duracion\": \"5 días\",\n            \"cantidad_total\": 10,\n            \"via_administracion\": \"VO\",\n            \"con_alimentos\": \"N\",\n            \"indicaciones\": \"Tomar en ayunas\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "localhost:8090/api/recetas/crear",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"crear"
+							]
+						},
+						"description": "Crea una nueva receta con transacción PostgreSQL atómica"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar receta",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"diagnostico_principal\": \"J01\",\n    \"indicaciones_generales\": \"Tomar medicamentos según indicación actualizada\",\n    \"fecha_vencimiento\": \"2025-08-15\",\n    \"agregar_medicamentos\": [\n        {\n            \"medicamento_id\": 103,\n            \"dosis\": \"1 tableta\",\n            \"frecuencia\": \"cada 24 horas\",\n            \"duracion\": \"30 días\",\n            \"cantidad_total\": 30,\n            \"via_administracion\": \"VO\",\n            \"con_alimentos\": \"S\",\n            \"indicaciones\": \"Tomar con el desayuno\"\n        }\n    ],\n    \"modificar_medicamentos\": [\n        {\n            \"id\": 1,\n            \"dosis\": \"2 tabletas\",\n            \"frecuencia\": \"cada 12 horas\"\n        }\n    ],\n    \"eliminar_medicamentos\": [2]\n}"
+						},
+						"url": {
+							"raw": "localhost:8090/api/recetas/1?medicoId=456",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"1"
+							],
+							"query": [
+								{
+									"key": "medicoId",
+									"value": "456",
+									"description": "ID del médico que realiza la actualización"
+								}
+							]
+						},
+						"description": "Actualiza una receta existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Cambiar estado receta",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/1/estado?nuevo_estado=02&medicoId=456",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"1",
+								"estado"
+							],
+							"query": [
+								{
+									"key": "nuevo_estado",
+									"value": "02",
+									"description": "01=Activa, 02=Despachada, 03=Vencida, 04=Anulada"
+								},
+								{
+									"key": "medicoId",
+									"value": "456",
+									"description": "ID del médico que realiza el cambio"
+								}
+							]
+						},
+						"description": "Cambia el estado de una receta"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para crear, actualizar y cambiar estado de recetas"
+		},
+		{
+			"name": "Medicamentos",
+			"item": [
+				{
+					"name": "Buscar medicamentos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/medicamentos/buscar?q=paracetamol&categoria=analgesico",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"medicamentos",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "paracetamol",
+									"description": "Término de búsqueda"
+								},
+								{
+									"key": "categoria",
+									"value": "analgesico",
+									"description": "Categoría del medicamento"
+								}
+							]
+						},
+						"description": "Busca medicamentos en el vademécum"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener medicamento por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/medicamentos/101",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"medicamentos",
+								"101"
+							]
+						},
+						"description": "Obtiene medicamento específico del vademécum"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener categorías de medicamentos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/medicamentos/categorias",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"medicamentos",
+								"categorias"
+							]
+						},
+						"description": "Obtiene categorías de medicamentos"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints relacionados con medicamentos"
+		},
+		{
+			"name": "Estadísticas",
+			"item": [
+				{
+					"name": "Estadísticas por médico",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/estadisticas/medico/456",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"estadisticas",
+								"medico",
+								"456"
+							]
+						},
+						"description": "Obtiene estadísticas de recetas por médico"
+					},
+					"response": []
+				},
+				{
+					"name": "Medicamentos más prescritos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/estadisticas/medicamentos-mas-prescritos?limite=10",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"estadisticas",
+								"medicamentos-mas-prescritos"
+							],
+							"query": [
+								{
+									"key": "limite",
+									"value": "10",
+									"description": "Cantidad máxima de resultados"
+								}
+							]
+						},
+						"description": "Obtiene medicamentos más prescritos"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para estadísticas"
+		},
+		{
+			"name": "Sistema",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8090/api/recetas/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8090",
+							"path": [
+								"api",
+								"recetas",
+								"health"
+							]
+						},
+						"description": "Health Check del microservicio"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de sistema"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:8090/api",
+			"type": "string"
+		}
+	]
+}

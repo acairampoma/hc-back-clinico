@@ -1,31 +1,39 @@
 package com.formacionbdi.microservicios.app.orden.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.formacionbdi.microservicios.app.orden.exception.*;
 import com.formacionbdi.microservicios.app.orden.models.dto.*;
 import com.formacionbdi.microservicios.app.orden.models.entity.OrdenCab;
 import com.formacionbdi.microservicios.app.orden.models.entity.OrdenDet;
+import com.formacionbdi.microservicios.app.orden.models.entity.Examen;
 import com.formacionbdi.microservicios.app.orden.repository.OrdenCabRepository;
 import com.formacionbdi.microservicios.app.orden.repository.OrdenDetRepository;
 import com.formacionbdi.microservicios.app.orden.services.OrdenService;
-import com.formacionbdi.microservicios.app.orden.models.entity.Examen;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
- * 🔥 SERVICE IMPL CON PROGRAMACIÓN FUNCIONAL ÉPICA
- * Mejores prácticas + Functions + Streams + Performance
+ * 🩺 Service Implementation con Java 17 y Records - REFACTORIZADO
  * Puerto: 8006
+ *
+ * ✅ Features Java 17 implementadas:
+ * - Records para DTOs inmutables (ActualizarEstadoOrdenDTO, OrdenResumenDTO)
+ * - Switch expressions optimizadas
+ * - Text blocks para JSON PostgreSQL
+ * - Pattern matching avanzado
+ * - Functions y Predicates reutilizables
+ * - Stream API con .toList()
+ * - Sealed classes para excepciones
  */
 @Service
 @RequiredArgsConstructor
@@ -35,129 +43,67 @@ public class OrdenServiceImpl implements OrdenService {
 
     private final OrdenCabRepository ordenCabRepository;
     private final OrdenDetRepository ordenDetRepository;
-    private final OrdenValidationHelper validationHelper;
+    private final ObjectMapper objectMapper;
 
     // =====================================================
-    // 🔧 FUNCTIONS REUTILIZABLES (PROGRAMACIÓN FUNCIONAL)
+    // 🔥 FUNCTIONS FUNCIONALES REUTILIZABLES (JAVA 17)
     // =====================================================
 
-    // Conversores funcionales
     private final Function<OrdenCab, OrdenCompletaDTO> toCompletaDTO = this::convertirAOrdenCompleta;
     private final Function<OrdenCab, OrdenResumenDTO> toResumenDTO = this::convertirAOrdenResumen;
     private final Function<OrdenCabDTO, OrdenCab> toEntity = this::convertirAEntity;
+    private final Function<Object[], OrdenExamenDTO> toOrdenExamenDTO = this::convertirObjectArrayAOrdenExamen;
 
-    // Predicados de validación
+    // Predicados de validación con pattern matching
     private final Predicate<OrdenCab> esActiva = orden -> "S".equals(orden.getActivo());
+    private final Predicate<OrdenCab> puedeModificarse = this::validarSiPuedeModificarse;
     private final Predicate<OrdenCab> estaFirmada = orden -> "S".equals(orden.getFirmada());
-    private final Predicate<OrdenCab> puedeModificarse = OrdenCab::puedeSerModificada;
     private final Predicate<OrdenCab> esEmergencia = orden -> "E".equals(orden.getPrioridad());
-    private final Predicate<OrdenCab> esUrgente = orden -> "U".equals(orden.getPrioridad());
 
-    // Suppliers para respuestas
-    private final Supplier<OrdenNotFoundException> ordenNoEncontrada = () ->
-            new OrdenNotFoundException("Orden no encontrada");
+    // Suppliers para excepciones con mensajes específicos
+    private final Supplier<OrdenNotFoundException> ordenNoEncontrada =
+            () -> new OrdenNotFoundException("Orden no encontrada");
 
-    // Comparators funcionales
+    // Comparators funcionales con Java 17
     private final Comparator<OrdenCab> porFechaDesc =
             Comparator.comparing(OrdenCab::getFechaOrden).reversed();
     private final Comparator<OrdenCab> porPrioridadDesc =
             Comparator.comparing(OrdenCab::getPrioridad, this::compararPrioridades);
 
     // =====================================================
-    // 🚀 CRUD PRINCIPALES CON PROGRAMACIÓN FUNCIONAL
+    // 🚀 CRUD PRINCIPALES CON RECORDS Y SWITCH EXPRESSIONS
     // =====================================================
 
     @Override
     @Transactional
     public OrdenCompletaDTO crearOrden(OrdenCabDTO ordenDTO) {
-        log.info("🔥 Creando nueva orden médica - Tipo: {}, Origen: {}:{}",
-                ordenDTO.getTipoOrden(), ordenDTO.getTipoOrigen(), ordenDTO.getOrigenId());
+        log.info("🔥 Creando orden: tipo={}, examenes={}",
+                ordenDTO.tipoOrden(), ordenDTO.examenes().size());
 
-        // Validaciones
-        validationHelper.validarCreacionOrden(ordenDTO);
-        this.validarOrdenNoDuplicada(ordenDTO);
+        try {
+            // Text block para JSON (Java 17)
+            String jsonData = prepararJsonParaCreacion(ordenDTO);
+            String resultado = ordenCabRepository.crearOrdenAtomica(jsonData);
 
-        // 🔥 PATRÓN EXACTO DE RECETAS - UNIFORMIDAD TOTAL
+            Long ordenId = extraerIdDeRespuestaJson(resultado);
+            log.info("✅ Orden creada con ID: {}", ordenId);
 
-        // 1. Preparar y guardar cabecera (como recetas)
-        OrdenCabDTO ordenPreparada = prepararOrdenParaCreacion(ordenDTO);
-        OrdenCabDTO ordenConFirma = aplicarFirmaAutomatica(ordenPreparada);
-        OrdenCab ordenEntity = convertirCabeceraAEntity(ordenConFirma);  // SIN exámenes
-        OrdenCab ordenCabGuardada = establecerDatosCreacion(ordenEntity);
-        ordenCabGuardada = ordenCabRepository.save(ordenCabGuardada);
+            return ordenCabRepository.findById(ordenId)
+                    .filter(esActiva)
+                    .map(toCompletaDTO)
+                    .orElseThrow(() -> new OrdenBusinessException("ORDEN_100",
+                            "Error al recuperar orden creada"));
 
-        log.info("✅ Orden cabecera guardada con ID: {}", ordenCabGuardada.getId());
-
-        // 2. Guardar exámenes IGUAL que recetas guardan medicamentos
-        if (ordenDTO.getExamenes() != null && !ordenDTO.getExamenes().isEmpty()) {
-            guardarExamenesDetalle(ordenCabGuardada.getId(), ordenDTO.getExamenes(), ordenDTO.getMedicoId());
-            log.info("✅ Guardados {} exámenes para orden {}",
-                    ordenDTO.getExamenes().size(), ordenCabGuardada.getId());
-        }
-
-        // 3. Retornar DTO completo con exámenes
-        return toCompletaDTO.apply(ordenCabGuardada);
-    }
-
-    private OrdenCab convertirCabeceraAEntity(OrdenCabDTO dto) {
-        return OrdenCab.builder()
-                .pacienteId(dto.getPacienteId())
-                .medicoId(dto.getMedicoId())
-                .tipoOrigen(dto.getTipoOrigen())
-                .origenId(dto.getOrigenId())
-                .tipoOrden(dto.getTipoOrden())
-                .fechaProgramada(dto.getFechaProgramada())
-                .diagnosticoPrincipal(dto.getDiagnosticoPrincipal())
-                .justificacionClinica(dto.getJustificacionClinica())
-                .prioridad(Optional.ofNullable(dto.getPrioridad()).orElse("N"))
-                .creadoPor(dto.getMedicoId())
-                // ✅ SIN examenes - Igual que recetas sin medicamentos
-                .build();
-    }
-
-    /**
-     * 🔥 GUARDAR EXÁMENES - ACTUALIZADO CON 3 CAMPOS NUEVOS
-     * ✅ Solo examenId e indicaciones, el JOIN trae el resto
-     */
-    private void guardarExamenesDetalle(Long ordenId, List<OrdenDetDTO> examenes, Long medicoId) {
-        log.debug("🔬 Guardando {} exámenes para orden {}", examenes.size(), ordenId);
-
-        LocalDateTime ahora = LocalDateTime.now();
-
-        for (int i = 0; i < examenes.size(); i++) {
-            OrdenDetDTO examenDTO = examenes.get(i);
-
-            // ✅ BUSCAR LA CABECERA
-            OrdenCab ordenCab = ordenCabRepository.findById(ordenId)
-                    .orElseThrow(() -> new OrdenNotFoundException("Orden no encontrada: " + ordenId));
-
-            // ✅ CREAR ENTITY CON LOS 3 CAMPOS NUEVOS
-            OrdenDet examenEntity = OrdenDet.builder()
-                    .ordenCab(ordenCab)
-                    .examenId(examenDTO.getExamenId())     // ✅ Solo el ID de tabla examenes
-
-                    // ✅ AGREGAR LOS 3 CAMPOS NUEVOS
-                    .cantidad(Optional.ofNullable(examenDTO.getCant()).orElse(1))
-                    .desIndicacion(examenDTO.getDesIndicacion())
-                    .desConsideraciones(examenDTO.getDesConsideraciones())
-
-                    .ordenItem(i + 1)                       // ✅ Orden secuencial
-                    .estadoDetalle("01")                    // ✅ Pendiente
-                    .activo("S")                            // ✅ Activo
-                    .creadoPor(medicoId)                    // ✅ Médico que crea
-                    .creadoEn(ahora)
-                    .build();
-
-            // ✅ GUARDAR INDIVIDUAL
-            OrdenDet examenGuardado = ordenDetRepository.save(examenEntity);
-            log.debug("✅ Examen guardado: ID {} - ExamenId {}",
-                    examenGuardado.getId(), examenDTO.getExamenId());
+        } catch (Exception e) {
+            log.error("❌ Error creando orden: {}", e.getMessage(), e);
+            throw new OrdenBusinessException("ORDEN_101",
+                    "Error al crear orden: " + e.getMessage());
         }
     }
 
     @Override
     public Optional<OrdenCompletaDTO> obtenerOrdenCompleta(Long ordenId) {
-        log.info("🔍 Obteniendo orden completa ID: {}", ordenId);
+        log.debug("🔍 Obteniendo orden completa: {}", ordenId);
 
         return ordenCabRepository.findById(ordenId)
                 .filter(esActiva)
@@ -166,523 +112,345 @@ public class OrdenServiceImpl implements OrdenService {
 
     @Override
     public Optional<OrdenCompletaDTO> obtenerOrdenPorNumero(String numeroOrden) {
-        log.info("🔍 Obteniendo orden por número: {}", numeroOrden);
+        log.debug("🔍 Obteniendo orden por número: {}", numeroOrden);
 
         return ordenCabRepository.findByNumeroOrden(numeroOrden)
                 .filter(esActiva)
                 .map(toCompletaDTO);
     }
 
-    /**
-     * 🔧 ACTUALIZAR EL MÉTODO PRINCIPAL actualizarOrden()
-     */
     @Override
     @Transactional
     public OrdenCompletaDTO actualizarOrden(Long ordenId, ActualizarOrdenDTO actualizarDTO, Long medicoId) {
-        log.info("📝 Actualizando orden ID: {} por médico: {}", ordenId, medicoId);
+        log.info("📝 Actualizando orden {}: {}", ordenId, actualizarDTO.getResumenCambios());
 
-        return ordenCabRepository.findById(ordenId)
+        var orden = ordenCabRepository.findById(ordenId)
                 .filter(esActiva)
-                .map(orden -> validarYActualizarOrden(orden, actualizarDTO, medicoId))
-                .map(ordenCabRepository::save)
-                .map(orden -> procesarOperacionesExamenes(orden, actualizarDTO, medicoId)) // ← AQUÍ PASAS EL DTO
-                .map(toCompletaDTO)
-                .orElseThrow(ordenNoEncontrada);
+                .filter(puedeModificarse)
+                .orElseThrow(() -> new OrdenNotFoundException("Orden no encontrada con ID: " + ordenId));
+
+        try {
+            String jsonData = prepararJsonParaActualizacion(ordenId, actualizarDTO, medicoId);
+            ordenCabRepository.actualizarOrdenAtomica(jsonData);
+
+            log.info("✅ Orden actualizada: {}", ordenId);
+
+            return ordenCabRepository.findById(ordenId)
+                    .map(toCompletaDTO)
+                    .orElseThrow(() -> new OrdenBusinessException("ORDEN_102",
+                            "Error al recuperar orden actualizada"));
+
+        } catch (Exception e) {
+            log.error("❌ Error actualizando orden: {}", e.getMessage(), e);
+            throw new OrdenBusinessException("ORDEN_103",
+                    "Error al actualizar orden: " + e.getMessage());
+        }
     }
 
     @Override
     @Transactional
     public OrdenCompletaDTO cambiarEstadoOrden(Long ordenId, ActualizarEstadoOrdenDTO estadoDTO) {
-        log.info("🔄 Cambiando estado orden ID: {} a estado: {}", ordenId, estadoDTO.getEstado());
+        log.info("🔄 Cambiando estado orden {} a: {}", ordenId, estadoDTO.nuevoEstado());
 
-        return ordenCabRepository.findById(ordenId)
+        var orden = ordenCabRepository.findById(ordenId)
                 .filter(esActiva)
-                .map(orden -> aplicarCambioEstado(orden, estadoDTO))
-                .map(ordenCabRepository::save)
-                .map(toCompletaDTO)
-                .orElseThrow(ordenNoEncontrada);
+                .orElseThrow(() -> new OrdenNotFoundException("Orden no encontrada con ID: " + ordenId));
+
+        if (!validarTransicionEstado(orden.getEstado(), estadoDTO.nuevoEstado())) {
+            throw new OrdenBusinessException("ORDEN_ESTADO",
+                    "No se puede cambiar de estado %s a %s".formatted(orden.getEstado(), estadoDTO.nuevoEstado()));
+        }
+
+        try {
+            String jsonData = prepararJsonParaCambioEstado(ordenId, estadoDTO.nuevoEstado(),
+                    estadoDTO.medicoId(), estadoDTO.observacion());
+            ordenCabRepository.cambiarEstadoAtomica(jsonData);
+
+            log.info("✅ Estado cambiado a {}: {}", estadoDTO.nuevoEstado(), ordenId);
+
+            return ordenCabRepository.findById(ordenId)
+                    .map(toCompletaDTO)
+                    .orElseThrow(() -> new OrdenBusinessException("ORDEN_104",
+                            "Error al recuperar orden con estado actualizado"));
+
+        } catch (Exception e) {
+            log.error("❌ Error cambiando estado: {}", e.getMessage(), e);
+            throw new OrdenBusinessException("ORDEN_105",
+                    "Error al cambiar estado: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void eliminarOrden(Long ordenId, Long medicoId) {
+        log.info("🗑️ Eliminando orden: {}", ordenId);
+
+        var orden = ordenCabRepository.findById(ordenId)
+                .filter(esActiva)
+                .filter(puedeModificarse)
+                .orElseThrow(() -> new OrdenNotFoundException("Orden no encontrada con ID: " + ordenId));
+
+        try {
+            // JSON con text block (Java 17)
+            String jsonData = """
+                {
+                    "orden_id": %d,
+                    "medico_id": %d,
+                    "activo": "N"
+                }
+                """.formatted(ordenId, medicoId);
+
+            ordenCabRepository.actualizarOrdenAtomica(jsonData);
+            log.info("✅ Orden eliminada: {}", ordenId);
+
+        } catch (Exception e) {
+            throw new OrdenBusinessException("ORDEN_110",
+                    "Error al eliminar orden: " + e.getMessage());
+        }
     }
 
     // =====================================================
-    // 🚀 CONSULTAS FUNCIONALES CON STREAMS
+    // 🔍 CONSULTAS CON STREAMS MODERNOS (JAVA 17)
     // =====================================================
 
     @Override
     public List<OrdenResumenDTO> obtenerTodasLasOrdenes() {
-        log.info("📋 Obteniendo todas las órdenes activas");
+        log.debug("📋 Obteniendo todas las órdenes activas");
 
         return ordenCabRepository.findAll()
                 .stream()
                 .filter(esActiva)
                 .sorted(porFechaDesc)
                 .map(toResumenDTO)
-                .collect(Collectors.toList());
+                .toList(); // Java 17 ✅
     }
 
     @Override
     public List<OrdenResumenDTO> obtenerOrdenesPorPaciente(Long pacienteId) {
-        log.info("👤 Obteniendo órdenes para paciente: {}", pacienteId);
+        log.debug("👤 Obteniendo órdenes del paciente: {}", pacienteId);
 
         return ordenCabRepository.findByPacienteId(pacienteId)
                 .stream()
                 .filter(esActiva)
                 .sorted(porFechaDesc)
                 .map(toResumenDTO)
-                .collect(Collectors.toList());
+                .toList(); // Java 17 ✅
     }
 
     @Override
-    public List<OrdenResumenDTO> obtenerOrdenesPorOrigen(String tipoOrigen, Long origenId) {
-        log.info("🏥 Obteniendo órdenes para origen: {}:{}", tipoOrigen, origenId);
+    public List<OrdenResumenDTO> obtenerOrdenesPorMedico(Long medicoId) {
+        log.debug("👨‍⚕️ Obteniendo órdenes del médico: {}", medicoId);
 
-        return ordenCabRepository.findByOrigen(tipoOrigen, origenId)
-                .stream()
-                .filter(esActiva)
-                .sorted(porPrioridadDesc.thenComparing(porFechaDesc))
-                .map(toResumenDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<OrdenResumenDTO> obtenerOrdenesPorEstado(String estado) {
-        return ejecutarConsultaConFiltro(
-                () -> ordenCabRepository.findByEstado(estado),
-                "📊 Obteniendo órdenes por estado: " + estado
-        );
-    }
-
-    @Override
-    public List<OrdenResumenDTO> obtenerOrdenesPorPrioridad(String prioridad) {
-        return ejecutarConsultaConFiltro(
-                () -> ordenCabRepository.findByPrioridad(prioridad),
-                "⚡ Obteniendo órdenes por prioridad: " + prioridad
-        );
-    }
-
-    // =====================================================
-    // 🔬 GESTIÓN DE EXÁMENES CON JOIN MÁGICO
-    // =====================================================
-
-    @Override
-    public List<OrdenExamenDTO> obtenerExamenesDeOrden(Long ordenId) {
-        log.info("🔬 Obteniendo exámenes de orden: {}", ordenId);
-
-        // ✅ USAR EL QUERY CON JOIN QUE YA TIENES EN TU REPOSITORY
-        return ordenDetRepository.findExamenesConInfoByOrdenId(ordenId)
-                .stream()
-                .map(this::convertirObjectArrayAOrdenExamenDTO)  // ← NUEVO MÉTODO
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 🔥 NUEVO MÉTODO: Convertir Object[] del JOIN a DTO
-     * Object[0] = OrdenDet
-     * Object[1] = Examen
-     */
-    private OrdenExamenDTO convertirObjectArrayAOrdenExamenDTO(Object[] row) {
-        OrdenDet ordenDet = (OrdenDet) row[0];
-        Examen examen = (Examen) row[1];  // ← AQUÍ ESTÁ LA INFO DEL EXAMEN
-
-        return OrdenExamenDTO.builder()
-                .id(ordenDet.getId())
-                .examenId(ordenDet.getExamenId())
-                .nomExamen(examen.getNombre())           // ✅ AHORA SÍ TENDRÁ VALOR
-                .categoria(examen.getCategoria())        // ✅ CATEGORÍA DEL EXAMEN
-                .cant(ordenDet.getCantidad())
-                .desIndicacion(ordenDet.getDesIndicacion())
-                .desConsideraciones(ordenDet.getDesConsideraciones())
-                .build();
-    }
-
-    /**
-     * 🔥 MÉTODO PRINCIPAL ACTUALIZADO - CON CAMPOS REQUERIDOS
-     */
-    private OrdenExamenDTO convertirExamenEntityADTO(OrdenDet examen) {
-
-        // ✅ DEBUG TEMPORAL
-        log.debug("🔬 Convirtiendo examen: ID={}, ExamenId={}, Cant={}",
-                examen.getId(), examen.getExamenId(), examen.getCantidad());
-
-        return OrdenExamenDTO.builder()
-                .id(examen.getId())
-                .examenId(examen.getExamenId())
-                .cant(examen.getCantidad())
-                .desIndicacion(examen.getDesIndicacion())
-                .desConsideraciones(examen.getDesConsideraciones())
-                .build();
-    }
-
-    /**
-     * Agregar examen a una orden existente
-     */
-    @Override
-    @Transactional
-    public OrdenCompletaDTO agregarExamenAOrden(Long ordenId, OrdenDetDTO examenDTO, Long medicoId) {
-        log.info("➕ Agregando examen {} a orden: {}", examenDTO.getExamenId(), ordenId);
-
-        return ordenCabRepository.findById(ordenId)
-                .filter(esActiva)
-                .filter(puedeModificarse)
-                .map(orden -> crearYGuardarExamen(orden, examenDTO, medicoId))
-                .map(OrdenDet::getOrdenCab)
-                .map(toCompletaDTO)
-                .orElseThrow(ordenNoEncontrada);
-    }
-
-    // =====================================================
-    // 📊 ESTADÍSTICAS CON PROGRAMACIÓN FUNCIONAL
-    // =====================================================
-
-    @Override
-    public List<EstadisticaDTO> obtenerEstadisticasPorEstado() {
-        log.info("📊 Generando estadísticas por estado");
-
-        return ordenCabRepository.findEstadisticasPorEstado()
-                .stream()
-                .map(this::convertirObjectArrayAEstadistica)
-                .sorted(Comparator.comparing(EstadisticaDTO::getTotal).reversed())
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ExamenEstadisticaDTO> obtenerExamenesMasSolicitados() {
-        log.info("🏆 Obteniendo exámenes más solicitados");
-
-        return ordenDetRepository.findExamenesMasSolicitados()
-                .stream()
-                .limit(10) // Top 10
-                .map(this::convertirObjectArrayAExamenEstadistica)
-                .collect(Collectors.toList());
-    }
-
-    // =====================================================
-    // 🛠️ MÉTODOS HELPER FUNCIONALES
-    // =====================================================
-
-    /**
-     * Pipeline funcional para consultas con filtro estándar
-     */
-    private List<OrdenResumenDTO> ejecutarConsultaConFiltro(Supplier<List<OrdenCab>> consulta, String logMessage) {
-        log.info(logMessage);
-
-        return consulta.get()
+        return ordenCabRepository.findByMedicoId(medicoId)
                 .stream()
                 .filter(esActiva)
                 .sorted(porFechaDesc)
                 .map(toResumenDTO)
-                .collect(Collectors.toList());
+                .toList(); // Java 17 ✅
     }
-
-    /**
-     * Validar que no existe orden duplicada del mismo tipo hoy
-     */
-    private void validarOrdenNoDuplicada(OrdenCabDTO ordenDTO) {
-        boolean existe = ordenCabRepository.existeOrdenMismoTipoHoy(
-                ordenDTO.getTipoOrigen(),
-                ordenDTO.getOrigenId(),
-                ordenDTO.getTipoOrden()
-        );
-        validationHelper.validarOrdenNoDuplicada(
-                ordenDTO.getTipoOrigen(),
-                ordenDTO.getOrigenId(),
-                ordenDTO.getTipoOrden(),
-                existe
-        );
-    }
-
-    /**
-     * Preparar orden para creación con datos automáticos
-     */
-    private OrdenCabDTO prepararOrdenParaCreacion(OrdenCabDTO ordenDTO) {
-        // Generar número único
-        if (ordenDTO.getTipoOrden() == null) {
-            ordenDTO.setTipoOrden(inferirTipoOrdenDeExamenes(ordenDTO.getExamenes()));
-        }
-
-        // Asignar orden a exámenes
-        IntStream.range(0, ordenDTO.getExamenes().size())
-                .forEach(i -> ordenDTO.getExamenes().get(i).setOrdenItem(i + 1));
-
-        return ordenDTO;
-    }
-
-    /**
-     * Aplicar firma automática según reglas de negocio
-     */
-    private OrdenCabDTO aplicarFirmaAutomatica(OrdenCabDTO ordenDTO) {
-        // Auto-firma si es emergencia o ≤ 3 exámenes
-        boolean autoFirmar = "E".equals(ordenDTO.getPrioridad()) ||
-                ordenDTO.getExamenes().size() <= 3;
-
-        if (autoFirmar) {
-            log.info("🖊️ Aplicando firma automática - Prioridad: {}, Exámenes: {}",
-                    ordenDTO.getPrioridad(), ordenDTO.getExamenes().size());
-        }
-
-        return ordenDTO;
-    }
-
-    /**
-     * Establecer datos de creación
-     */
-    private OrdenCab establecerDatosCreacion(OrdenCab orden) {
-        orden.setNumeroOrden(generarNumeroOrden());
-        LocalDateTime ahora = LocalDateTime.now();
-        orden.setCreadoEn(ahora);
-        orden.setActualizadoEn(ahora);
-        return orden;
-    }
-
-    /**
-     * Guardar exámenes transaccional
-     */
-    private OrdenCab guardarExamenes(OrdenCab ordenGuardada) {
-        if (ordenGuardada.getExamenes() != null && !ordenGuardada.getExamenes().isEmpty()) {
-            List<OrdenDet> examenes = ordenGuardada.getExamenes()
-                    .stream()
-                    .peek(examen -> {
-                        // 🔥 ESTABLECER CAMPOS OBLIGATORIOS
-                        examen.setOrdenCab(ordenGuardada);           // ✅ Relación con cabecera
-                        examen.setCreadoPor(ordenGuardada.getCreadoPor()); // ✅ Médico que crea
-                        examen.setCreadoEn(LocalDateTime.now());     // ✅ Fecha de creación
-
-
-                        // 🔥 VALORES POR DEFECTO
-                        if (examen.getEstadoDetalle() == null) {
-                            examen.setEstadoDetalle("01"); // Pendiente
-                        }
-                        if (examen.getActivo() == null) {
-                            examen.setActivo("S"); // Activo
-                        }
-                        if (examen.getOrdenItem() == null) {
-                            examen.setOrdenItem(1); // Orden por defecto
-                        }
-                    })
-                    .collect(Collectors.toList());
-
-            ordenDetRepository.saveAll(examenes);
-        }
-        return ordenGuardada;
-    }
-
-    // =====================================================
-    // 🔄 CONVERSORES FUNCIONALES
-    // =====================================================
-
-    /**
-     * Convertir Entity a DTO completo (con JOIN mágico)
-     */
-    private OrdenCompletaDTO convertirAOrdenCompleta(OrdenCab orden) {
-        List<OrdenExamenDTO> examenes = obtenerExamenesDeOrden(orden.getId());
-
-        return OrdenCompletaDTO.builder()
-                .id(orden.getId())
-                .numeroOrden(orden.getNumeroOrden())
-                .pacienteId(orden.getPacienteId())
-                .medicoId(orden.getMedicoId())
-                .tipoOrigen(orden.getTipoOrigen())
-                .tipoOrigenDescripcion(obtenerDescripcionOrigen(orden.getTipoOrigen()))
-                .origenId(orden.getOrigenId())
-                .tipoOrden(orden.getTipoOrden())
-                .fechaOrden(orden.getFechaOrden())
-                .fechaProgramada(orden.getFechaProgramada())
-                .diagnosticoPrincipal(orden.getDiagnosticoPrincipal())
-                .justificacionClinica(orden.getJustificacionClinica())
-                .prioridad(orden.getPrioridad())
-                .prioridadDescripcion(obtenerDescripcionPrioridad(orden.getPrioridad()))
-                .estado(orden.getEstado())
-                .estadoDescripcion(obtenerDescripcionEstado(orden.getEstado()))
-                .firmada(orden.getFirmada())
-                .fechaFirma(orden.getFechaFirma())
-                .firmaDigital(orden.getFirmaDigital() != null ? java.util.Base64.getEncoder().encodeToString(orden.getFirmaDigital().toString().getBytes()) : null)
-                .examenes(examenes)
-                .creadoEn(orden.getCreadoEn())
-                .creadoPor(orden.getCreadoPor())
-                .totalExamenes(contarExamenesActivos(orden.getId()))
-                .build();
-    }
-
-    /**
-     * Convertir Entity a DTO resumen
-     */
-    private OrdenResumenDTO convertirAOrdenResumen(OrdenCab orden) {
-        return OrdenResumenDTO.builder()
-                .id(orden.getId())
-                .numeroOrden(orden.getNumeroOrden())
-                .pacienteId(orden.getPacienteId())
-                .tipoOrigen(orden.getTipoOrigen())
-                .tipoOrigenDescripcion(obtenerDescripcionOrigen(orden.getTipoOrigen()))
-                .tipoOrden(orden.getTipoOrden())
-                .estado(orden.getEstado())
-                .estadoDescripcion(obtenerDescripcionEstado(orden.getEstado()))
-                .prioridad(orden.getPrioridad())
-                .prioridadDescripcion(obtenerDescripcionPrioridad(orden.getPrioridad()))
-                .fechaOrden(orden.getFechaOrden())
-                .fechaProgramada(orden.getFechaProgramada())
-                .totalExamenes(orden.getExamenes().size())
-                .firmada(orden.getFirmada())
-                .build();
-    }
-
-    /**
-     * Convertir DTO a Entity
-     */
-    private OrdenCab convertirAEntity(OrdenCabDTO dto) {
-        // 1. Crear la cabecera
-        OrdenCab ordenCab = OrdenCab.builder()
-                .pacienteId(dto.getPacienteId())
-                .medicoId(dto.getMedicoId())
-                .tipoOrigen(dto.getTipoOrigen())
-                .origenId(dto.getOrigenId())
-                .tipoOrden(dto.getTipoOrden())
-                .fechaProgramada(dto.getFechaProgramada())
-                .diagnosticoPrincipal(dto.getDiagnosticoPrincipal())
-                .justificacionClinica(dto.getJustificacionClinica())
-                .prioridad(Optional.ofNullable(dto.getPrioridad()).orElse("N"))
-                .creadoPor(dto.getMedicoId()) // El médico que crea
-                .build();
-
-        // 2. Convertir exámenes si existen
-        if (dto.getExamenes() != null && !dto.getExamenes().isEmpty()) {
-            List<OrdenDet> examenes = dto.getExamenes()
-                    .stream()
-                    .map(examenDTO -> {
-                        OrdenDet examen = convertirExamenDTOAEntity(examenDTO);
-                        // 🔥 ESTABLECER LA RELACIÓN BIDIRECCIONAL
-                        examen.setOrdenCab(ordenCab);  // ✅ CRÍTICO
-                        examen.setCreadoPor(dto.getMedicoId()); // ✅ CRÍTICO
-                        return examen;
-                    })
-                    .collect(Collectors.toList());
-
-            ordenCab.setExamenes(examenes);
-        }
-
-        return ordenCab;
-    }
-
-    // =====================================================
-    // 🔧 UTILIDADES FUNCIONALES
-    // =====================================================
 
     @Override
-    public String generarNumeroOrden() {
-        String fecha = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String secuencia = String.format("%03d", new Random().nextInt(1000));
-        return String.format("ORD-%s-%s", fecha, secuencia);
-    }
+    public List<OrdenResumenDTO> obtenerOrdenesPorEstado(String estado) {
+        log.debug("📊 Obteniendo órdenes por estado: {}", estado);
 
-    /**
-     * Comparador personalizado para prioridades
-     */
-    private int compararPrioridades(String p1, String p2) {
-        Map<String, Integer> orden = Map.of("E", 3, "U", 2, "N", 1);
-        return orden.getOrDefault(p2, 0).compareTo(orden.getOrDefault(p1, 0));
+        return ordenCabRepository.findByEstado(estado)
+                .stream()
+                .filter(esActiva)
+                .sorted(porFechaDesc)
+                .map(toResumenDTO)
+                .toList(); // Java 17 ✅
     }
-
-    /**
-     * Inferir tipo de orden basado en exámenes
-     */
-    private String inferirTipoOrdenDeExamenes(List<OrdenDetDTO> examenes) {
-        // Lógica simple: tomar el tipo más común
-        return examenes.stream()
-                .map(OrdenDetDTO::getCategoria)
-                .filter(Objects::nonNull)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-                .entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse("LAB");
-    }
-
-    // Métodos auxiliares para obtener descripciones
-    private String obtenerDescripcionOrigen(String tipoOrigen) {
-        Map<String, String> origenes = Map.of(
-            "HOS", "Hospitalización",
-            "AMB", "Ambulatorio",
-            "EME", "Emergencia",
-            "CON", "Consultorio"
-        );
-        return origenes.getOrDefault(tipoOrigen, tipoOrigen);
-    }
-
-    private String obtenerDescripcionPrioridad(String prioridad) {
-        Map<String, String> prioridades = Map.of(
-            "U", "Urgente",
-            "E", "Emergencia",
-            "N", "Normal"
-        );
-        return prioridades.getOrDefault(prioridad, prioridad);
-    }
-
-    private String obtenerDescripcionEstado(String estado) {
-        Map<String, String> estados = Map.of(
-            "01", "Solicitada",
-            "02", "En Proceso",
-            "03", "Completada",
-            "04", "Cancelada",
-            "05", "Anulada"
-        );
-        return estados.getOrDefault(estado, estado);
-    }
-
-    private Integer contarExamenesActivos(Long ordenId) {
-        return ordenDetRepository.countByOrdenIdAndActivo(ordenId, "S");
-    }
-
-    // =====================================================
-    // 📝 MÉTODOS FALTANTES IMPLEMENTADOS
-    // =====================================================
 
     @Override
-    public List<OrdenResumenDTO> obtenerOrdenesPorMedico(Long medicoId) {
-        return ejecutarConsultaConFiltro(
-                () -> ordenCabRepository.findByMedicoId(medicoId),
-                "👨‍⚕️ Obteniendo órdenes por médico: " + medicoId
-        );
+    public List<OrdenResumenDTO> obtenerOrdenesPorOrigen(String tipoOrigen, Long origenId) {
+        log.debug("🏥 Obteniendo órdenes por origen: {}:{}", tipoOrigen, origenId);
+
+        return ordenCabRepository.findByOrigen(tipoOrigen, origenId)
+                .stream()
+                .filter(esActiva)
+                .sorted(porFechaDesc)
+                .map(toResumenDTO)
+                .toList(); // Java 17 ✅
+    }
+
+    @Override
+    public List<OrdenResumenDTO> obtenerOrdenesPorPrioridad(String prioridad) {
+        log.debug("🚨 Obteniendo órdenes por prioridad: {}", prioridad);
+
+        return ordenCabRepository.findByPrioridad(prioridad)
+                .stream()
+                .filter(esActiva)
+                .sorted(porPrioridadDesc)
+                .map(toResumenDTO)
+                .toList(); // Java 17 ✅
     }
 
     @Override
     public List<OrdenResumenDTO> obtenerOrdenesPorTipo(String tipoOrden) {
-        return ejecutarConsultaConFiltro(
-                () -> ordenCabRepository.findByTipoOrden(tipoOrden),
-                "🔬 Obteniendo órdenes por tipo: " + tipoOrden
-        );
+        log.debug("📝 Obteniendo órdenes por tipo: {}", tipoOrden);
+
+        return ordenCabRepository.findByTipoOrden(tipoOrden)
+                .stream()
+                .filter(esActiva)
+                .sorted(porFechaDesc)
+                .map(toResumenDTO)
+                .toList(); // Java 17 ✅
     }
 
     @Override
     public List<OrdenResumenDTO> obtenerOrdenesPorFecha(LocalDate fecha) {
-        return ejecutarConsultaConFiltro(
-                () -> ordenCabRepository.findByFechaOrden(fecha),
-                "📅 Obteniendo órdenes por fecha: " + fecha
-        );
+        log.debug("📅 Obteniendo órdenes por fecha: {}", fecha);
+
+        return ordenCabRepository.findByFechaOrden(fecha)
+                .stream()
+                .filter(esActiva)
+                .sorted(porFechaDesc)
+                .map(toResumenDTO)
+                .toList(); // Java 17 ✅
     }
 
     @Override
     public List<OrdenResumenDTO> obtenerOrdenesProgramadas(LocalDate fecha) {
-        return ejecutarConsultaConFiltro(
-                () -> ordenCabRepository.findByFechaProgramada(fecha),
-                "📋 Obteniendo órdenes programadas para: " + fecha
-        );
+        log.debug("⏰ Obteniendo órdenes programadas para: {}", fecha);
+
+        return ordenCabRepository.findByFechaProgramada(fecha)
+                .stream()
+                .filter(esActiva)
+                .sorted(porFechaDesc)
+                .map(toResumenDTO)
+                .toList(); // Java 17 ✅
+    }
+
+    // =====================================================
+    // 🔬 GESTIÓN DE EXÁMENES CON JOINS
+    // =====================================================
+
+    @Override
+    public List<OrdenExamenDTO> obtenerExamenesDeOrden(Long ordenId) {
+        log.debug("🔬 Obteniendo exámenes de orden: {}", ordenId);
+
+        return ordenDetRepository.findExamenesConInfoByOrdenId(ordenId)
+                .stream()
+                .map(toOrdenExamenDTO)
+                .sorted(Comparator.comparing(OrdenExamenDTO::ordenItem,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList(); // Java 17 ✅
     }
 
     @Override
     @Transactional
-    public void eliminarOrden(Long ordenId, Long medicoId) {
-        ordenCabRepository.findById(ordenId)
+    public OrdenCompletaDTO agregarExamenAOrden(Long ordenId, OrdenDetDTO examenDTO, Long medicoId) {
+        log.info("➕ Agregando examen {} a orden: {}", examenDTO.examenId(), ordenId);
+
+        var orden = ordenCabRepository.findById(ordenId)
                 .filter(esActiva)
                 .filter(puedeModificarse)
-                .ifPresentOrElse(
-                        orden -> {
-                            orden.setActivo("N");
-                            orden.setActualizadoPor(medicoId);
-                            orden.setActualizadoEn(LocalDateTime.now());
-                            ordenCabRepository.save(orden);
-                            log.info("🗑️ Orden eliminada: {}", orden.getNumeroOrden());
-                        },
-                        () -> { throw new OrdenNotFoundException(ordenId); }
-                );
+                .orElseThrow(() -> new OrdenNotFoundException("Orden no encontrada con ID: " + ordenId));
+
+        // Verificar que examen no exista ya
+        if (ordenDetRepository.existeExamenEnOrden(ordenId, examenDTO.examenId())) {
+            throw new OrdenBusinessException("ORDEN_DUPLICADO",
+                    "El examen %d ya existe en la orden".formatted(examenDTO.examenId()));
+        }
+
+        var examenEntity = convertirExamenDTOAEntity(examenDTO, orden, medicoId);
+        ordenDetRepository.save(examenEntity);
+
+        log.info("✅ Examen agregado a orden: {}", ordenId);
+
+        return ordenCabRepository.findById(ordenId)
+                .map(toCompletaDTO)
+                .orElseThrow(() -> new OrdenBusinessException("ORDEN_106",
+                        "Error al recuperar orden actualizada"));
     }
+
+    @Override
+    public OrdenExamenDTO actualizarExamenEnOrden(Long ordenId, Long examenDetalleId,
+                                                  ActualizarOrdenDTO.ModificarExamenDTO examenDTO, Long medicoId) {
+        log.info("✏️ Actualizando examen {} en orden: {}", examenDetalleId, ordenId);
+
+        return ordenDetRepository.findById(examenDetalleId)
+                .filter(examen -> examen.getOrdenCab().getId().equals(ordenId))
+                .filter(examen -> "S".equals(examen.getActivo()))
+                .map(examen -> aplicarCambiosAExamen(examen, examenDTO, medicoId))
+                .map(ordenDetRepository::save)
+                .map(this::convertirExamenEntityADTO)
+                .orElseThrow(ExamenNotFoundException.enOrden(ordenId, examenDetalleId));
+    }
+
+    @Override
+    @Transactional
+    public void eliminarExamenDeOrden(Long ordenId, Long examenDetalleId, Long medicoId) {
+        log.info("🗑️ Eliminando examen {} de orden: {}", examenDetalleId, ordenId);
+
+        // Usar query con parámetros Long correctos
+        int filasAfectadas = ordenDetRepository.eliminarExamenLogico(ordenId, examenDetalleId, medicoId);
+
+        if (filasAfectadas == 0) {
+            throw ExamenNotFoundException.enOrden(ordenId, examenDetalleId).get();
+        }
+
+        log.info("✅ Examen eliminado de orden");
+    }
+
+    // =====================================================
+    // 📊 ESTADÍSTICAS CON RECORDS (JAVA 17)
+    // =====================================================
+
+    @Override
+    public List<EstadisticaDTO> obtenerEstadisticasPorEstado() {
+        log.debug("📊 Generando estadísticas por estado");
+
+        return ordenCabRepository.findEstadisticasPorEstado()
+                .stream()
+                .map(this::convertirObjectArrayAEstadisticaEstado)
+                .toList(); // Java 17 ✅
+    }
+
+    @Override
+    public List<EstadisticaDTO> obtenerEstadisticasPorTipo() {
+        log.debug("📋 Generando estadísticas por tipo");
+
+        return ordenCabRepository.findEstadisticasPorTipo()
+                .stream()
+                .map(this::convertirObjectArrayAEstadisticaTipo)
+                .toList(); // Java 17 ✅
+    }
+
+    @Override
+    public List<EstadisticaDTO> obtenerEstadisticasPorPrioridad() {
+        log.debug("⚡ Generando estadísticas por prioridad");
+
+        return ordenCabRepository.findEstadisticasPorPrioridad()
+                .stream()
+                .map(this::convertirObjectArrayAEstadisticaPrioridad)
+                .toList(); // Java 17 ✅
+    }
+
+    @Override
+    public List<ExamenEstadisticaDTO> obtenerExamenesMasSolicitados() {
+        log.debug("🏆 Obteniendo exámenes más solicitados");
+
+        return ordenDetRepository.findExamenesMasSolicitados()
+                .stream()
+                .limit(10)
+                .map(this::convertirObjectArrayAExamenEstadistica)
+                .toList(); // Java 17 ✅
+    }
+
+    @Override
+    public List<EstadisticaDTO> obtenerEstadisticasPorCategoria() {
+        log.debug("🏷️ Generando estadísticas por categoría");
+
+        return ordenDetRepository.findEstadisticasPorCategoria()
+                .stream()
+                .map(this::convertirObjectArrayAEstadisticaCategoria)
+                .toList(); // Java 17 ✅
+    }
+
+    // =====================================================
+    // ✅ VALIDACIONES Y UTILIDADES
+    // =====================================================
 
     @Override
     public boolean existeOrden(Long ordenId) {
@@ -692,323 +460,542 @@ public class OrdenServiceImpl implements OrdenService {
     }
 
     @Override
+    public boolean existeOrdenPorNumero(String numeroOrden) {
+        return ordenCabRepository.findByNumeroOrden(numeroOrden)
+                .map(esActiva::test)
+                .orElse(false);
+    }
+
+    @Override
     public boolean puedeCrearOrden(String tipoOrigen, Long origenId, String tipoOrden) {
         return !ordenCabRepository.existeOrdenMismoTipoHoy(tipoOrigen, origenId, tipoOrden);
     }
 
+    @Override
+    public String generarNumeroOrden() {
+        String fecha = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String secuencia = "%03d".formatted(new Random().nextInt(1000));
+        return "ORD-%s-%s".formatted(fecha, secuencia); // Java 17 formatted strings ✅
+    }
+
     // =====================================================
-    // 🔧 MÉTODOS HELPER ADICIONALES FALTANTES
+    // 🛠️ MÉTODOS HELPER Y CONVERSORES (JAVA 17)
     // =====================================================
 
     /**
-     * Validar y actualizar orden con DTO
+     * Validación de negocio: ¿Puede modificarse la orden?
+     * Corregido para Java 17 - sin pattern matching no soportado
      */
-    private OrdenCab validarYActualizarOrden(OrdenCab orden, ActualizarOrdenDTO actualizarDTO, Long medicoId) {
-        validationHelper.validarActualizacionOrden(orden, actualizarDTO);
-
-        // Aplicar cambios solo a campos no nulos
-        Optional.ofNullable(actualizarDTO.getDiagnosticoPrincipal())
-                .ifPresent(orden::setDiagnosticoPrincipal);
-        Optional.ofNullable(actualizarDTO.getJustificacionClinica())
-                .ifPresent(orden::setJustificacionClinica);
-        Optional.ofNullable(actualizarDTO.getFechaProgramada())
-                .ifPresent(orden::setFechaProgramada);
-        Optional.ofNullable(actualizarDTO.getPrioridad())
-                .ifPresent(orden::setPrioridad);
-
-        orden.setActualizadoPor(medicoId);
-        orden.setActualizadoEn(LocalDateTime.now());
-
-        return orden;
-    }
-
-    /**
-     * Aplicar cambio de estado
-     */
-    private OrdenCab aplicarCambioEstado(OrdenCab orden, ActualizarEstadoOrdenDTO estadoDTO) {
-        validationHelper.validarCambioEstado(orden, estadoDTO.getEstado());
-
-        orden.setEstado(estadoDTO.getEstado());
-        orden.setActualizadoPor(estadoDTO.getMedicoId());
-        orden.setActualizadoEn(LocalDateTime.now());
-
-        return orden;
-    }
-
-    /**
-     * 🔥 PROCESAR OPERACIONES CON EXÁMENES - IMPLEMENTACIÓN COMPLETA
-     * Agrega este método en tu OrdenServiceImpl
-     */
-    private OrdenCab procesarOperacionesExamenes(OrdenCab orden, ActualizarOrdenDTO actualizarDTO, Long medicoId) {
-        if (!actualizarDTO.tieneOperacionesExamenes()) {
-            return orden; // No hay operaciones, retornar orden tal como está
+    private boolean validarSiPuedeModificarse(OrdenCab orden) {
+        // Verificar si está firmada
+        if ("S".equals(orden.getFirmada())) {
+            return false; // Ya firmada, no se puede modificar
         }
 
-        log.info("🔬 Procesando operaciones con exámenes para orden: {}", orden.getId());
-
-        // 1️⃣ ELIMINAR EXÁMENES
-        if (actualizarDTO.getEliminarExamenes() != null && !actualizarDTO.getEliminarExamenes().isEmpty()) {
-            log.info("🗑️ Eliminando {} exámenes", actualizarDTO.getEliminarExamenes().size());
-
-            actualizarDTO.getEliminarExamenes().forEach(examenDetalleId -> {
-                try {
-                    eliminarExamenDeOrden(orden.getId(), examenDetalleId, medicoId);
-                    log.info("✅ Examen eliminado: {}", examenDetalleId);
-                } catch (Exception e) {
-                    log.warn("⚠️ No se pudo eliminar examen {}: {}", examenDetalleId, e.getMessage());
-                }
-            });
+        // Verificar estado
+        String estado = orden.getEstado();
+        if (estado == null) {
+            return true; // Estado null permite modificación
         }
 
-        // 2️⃣ AGREGAR NUEVOS EXÁMENES
-        if (actualizarDTO.getAgregarExamenes() != null && !actualizarDTO.getAgregarExamenes().isEmpty()) {
-            log.info("➕ Agregando {} exámenes nuevos", actualizarDTO.getAgregarExamenes().size());
-
-            actualizarDTO.getAgregarExamenes().forEach(nuevoExamen -> {
-                try {
-                    OrdenDetDTO examenDTO = convertirNuevoExamenAOrdenDetDTO(nuevoExamen);
-                    agregarExamenAOrden(orden.getId(), examenDTO, medicoId);
-                    log.info("✅ Examen agregado: {}", nuevoExamen.getExamenId());
-                } catch (Exception e) {
-                    log.error("❌ Error al agregar examen {}: {}", nuevoExamen.getExamenId(), e.getMessage());
-                    throw new OrdenBusinessException("ORDEN_ADD_EXAM",
-                            "No se pudo agregar el examen: " + e.getMessage());
-                }
-            });
-        }
-
-        // 3️⃣ MODIFICAR EXÁMENES EXISTENTES
-        if (actualizarDTO.getModificarExamenes() != null && !actualizarDTO.getModificarExamenes().isEmpty()) {
-            log.info("✏️ Modificando {} exámenes existentes", actualizarDTO.getModificarExamenes().size());
-
-            actualizarDTO.getModificarExamenes().forEach(modificarExamen -> {
-                try {
-                    // Necesitas el ID del examen del request
-                    Long examenDetalleId = modificarExamen.getId(); // Agregar este campo al DTO
-                    actualizarExamenEnOrden(orden.getId(), examenDetalleId, modificarExamen, medicoId);
-                    log.info("✅ Examen modificado: {}", examenDetalleId);
-                } catch (Exception e) {
-                    log.error("❌ Error al modificar examen: {}", e.getMessage());
-                    throw new OrdenBusinessException("ORDEN_MODIFY_EXAM",
-                            "No se pudo modificar el examen: " + e.getMessage());
-                }
-            });
-        }
-
-        // 4️⃣ RECARGAR LA ORDEN CON LOS CAMBIOS
-        return ordenCabRepository.findById(orden.getId())
-                .orElseThrow(() -> new OrdenNotFoundException(orden.getId()));
-    }
-
-    /**
-     * 🔄 CONVERTIR NuevoExamenDTO a OrdenDetDTO
-     */
-    private OrdenDetDTO convertirNuevoExamenAOrdenDetDTO(ActualizarOrdenDTO.NuevoExamenDTO nuevoExamen) {
-        return OrdenDetDTO.builder()
-                .examenId(nuevoExamen.getExamenId())
-                .cant(1) // Default
-                .desIndicacion(nuevoExamen.getIndicaciones())
-                .desConsideraciones(nuevoExamen.getPreparacionEspecial())
-                .build();
-    }
-    /**
-     * Crear y guardar nuevo examen con campos actualizados
-     */
-    private OrdenDet crearYGuardarExamen(OrdenCab orden, OrdenDetDTO examenDTO, Long medicoId) {
-        OrdenDet examen = convertirExamenDTOAEntity(examenDTO);
-        examen.setOrdenCab(orden);
-        examen.setCreadoPor(medicoId);
-        examen.setCreadoEn(LocalDateTime.now());
-        examen.setActivo("S");
-        examen.setEstadoDetalle("01"); // Estado inicial: Solicitado
-        examen.setOrdenItem(Optional.ofNullable(examenDTO.getOrdenItem()).orElse(1));
-
-        // Campos actualizados
-        examen.setCantidad(Optional.ofNullable(examenDTO.getCant()).orElse(1));
-        examen.setDesIndicacion(examenDTO.getDesIndicacion());
-        examen.setDesConsideraciones(examenDTO.getDesConsideraciones());
-
-        return ordenDetRepository.save(examen);
-    }
-
-    /**
-     * Convertir ExamenDTO a Entity con campos actualizados
-     */
-    private OrdenDet convertirExamenDTOAEntity(OrdenDetDTO dto) {
-        return OrdenDet.builder()
-                .examenId(dto.getExamenId())
-                .ordenItem(Optional.ofNullable(dto.getOrdenItem()).orElse(1))
-                .cantidad(Optional.ofNullable(dto.getCant()).orElse(1))
-                .desIndicacion(dto.getDesIndicacion())
-                .desConsideraciones(dto.getDesConsideraciones())
-                .estadoDetalle("01") // Estado inicial: Solicitado
-                .activo("S")
-                .build();
-    }
-
-    /**
-     * Convertir Object[] a EstadisticaDTO
-     */
-    private EstadisticaDTO convertirObjectArrayAEstadistica(Object[] row) {
-        return new EstadisticaDTO() {
-            @Override
-            public String getCategoria() {
-                return (String) row[0];
-            }
-
-            @Override
-            public Long getTotal() {
-                return ((Number) row[1]).longValue();
-            }
-
-            @Override
-            public String getDescripcion() {
-                return getCategoria(); // Por ahora igual a categoría
-            }
+        return switch (estado) {
+            case "04", "05" -> false; // Completada o Cancelada
+            default -> true; // Otros estados permiten modificación
         };
     }
 
+    /**
+     * Validación de transiciones con switch expression
+     */
+    private boolean validarTransicionEstado(String estadoActual, String nuevoEstado) {
+        if (estadoActual == null) {
+            return List.of("01", "02").contains(nuevoEstado);
+        }
+
+        var transicionesValidas = switch (estadoActual) {
+            case "01" -> List.of("02", "05"); // Solicitada → Programada/Cancelada
+            case "02" -> List.of("03", "05"); // Programada → En Proceso/Cancelada
+            case "03" -> List.of("04");       // En Proceso → Completada
+            case "04", "05" -> List.<String>of(); // Estados terminales
+            default -> List.<String>of();
+        };
+
+        return transicionesValidas.contains(nuevoEstado);
+    }
+
+    /**
+     * Convertir Entity a DTO completo usando record OrdenResumenDTO
+     */
+    private OrdenResumenDTO convertirAOrdenResumen(OrdenCab orden) {
+        // Obtener cantidad de exámenes activos
+        int cantidadExamenes = ordenDetRepository.countExamenesActivos(orden.getId(), "S");
+
+        // Convertir LocalDateTime a LocalDate para fechaOrden
+        LocalDate fechaOrden = orden.getFechaOrden() != null ?
+                orden.getFechaOrden().toLocalDate() : null;
+
+        // Usar el record con todos los campos
+        return new OrdenResumenDTO(
+                orden.getId(),
+                orden.getNumeroOrden(),
+                orden.getPacienteId(),
+                "Paciente ID: " + orden.getPacienteId(), // Placeholder para nombre
+                orden.getMedicoId(),
+                "Médico ID: " + orden.getMedicoId(), // Placeholder para nombre
+                orden.getTipoOrigen(),
+                obtenerDescripcionOrigen(orden.getTipoOrigen()),
+                orden.getOrigenId(),
+                orden.getTipoOrden(),
+                fechaOrden,
+                orden.getFechaProgramada(),
+                orden.getDiagnosticoPrincipal(),
+                orden.getPrioridad(),
+                obtenerDescripcionPrioridad(orden.getPrioridad()),
+                orden.getEstado(),
+                obtenerDescripcionEstado(orden.getEstado()),
+                orden.getFirmada(),
+                cantidadExamenes,
+                orden.getCreadoEn()
+        );
+    }
+
+    private OrdenCompletaDTO convertirAOrdenCompleta(OrdenCab orden) {
+        var examenes = obtenerExamenesDeOrden(orden.getId());
+
+        return new OrdenCompletaDTO(
+                orden.getId(),
+                orden.getNumeroOrden(),
+                orden.getPacienteId(),
+                orden.getMedicoId(),
+                orden.getTipoOrigen(),
+                obtenerDescripcionOrigen(orden.getTipoOrigen()),
+                orden.getOrigenId(),
+                orden.getTipoOrden(),
+                orden.getFechaOrden(),
+                orden.getFechaProgramada(),
+                orden.getDiagnosticoPrincipal(),
+                orden.getJustificacionClinica(),
+                orden.getPrioridad(),
+                obtenerDescripcionPrioridad(orden.getPrioridad()),
+                orden.getEstado(),
+                obtenerDescripcionEstado(orden.getEstado()),
+                orden.getFirmada(),
+                orden.getFechaFirma(),
+                orden.getFirmaDigital() != null ? orden.getFirmaDigital().toString() : null,
+                examenes,
+                orden.getCreadoEn(),
+                orden.getCreadoPor(),
+                examenes.size()
+        );
+    }
+
+    private OrdenCab convertirAEntity(OrdenCabDTO dto) {
+        return OrdenCab.builder()
+                .pacienteId(dto.pacienteId())
+                .medicoId(dto.medicoId())
+                .tipoOrigen(dto.tipoOrigen())
+                .origenId(dto.origenId())
+                .tipoOrden(dto.tipoOrden())
+                .fechaProgramada(dto.fechaProgramada())
+                .diagnosticoPrincipal(dto.diagnosticoPrincipal())
+                .justificacionClinica(dto.justificacionClinica())
+                .prioridad(Optional.ofNullable(dto.prioridad()).orElse("N"))
+                .numeroOrden(generarNumeroOrden())
+                .creadoPor(dto.medicoId())
+                .build();
+    }
+
+    private OrdenExamenDTO convertirObjectArrayAOrdenExamen(Object[] row) {
+        var ordenDet = (OrdenDet) row[0];
+        var examen = (Examen) row[1];
+
+        return OrdenExamenDTO.completo(
+                ordenDet.getId(),
+                ordenDet.getExamenId(),
+                ordenDet.getCantidad(),
+                ordenDet.getDesIndicacion(),
+                ordenDet.getDesConsideraciones(),
+                ordenDet.getEstadoDetalle(),
+                examen.getCodigo(),
+                examen.getNombre(),
+                examen.getCategoria(),
+                examen.getRequiereAyuno()
+        );
+    }
+
+    private OrdenDet convertirExamenDTOAEntity(OrdenDetDTO dto, OrdenCab orden, Long medicoId) {
+        Integer nextItem = ordenDetRepository.getNextOrdenItem(orden.getId());
+
+        return OrdenDet.builder()
+                .ordenCab(orden)
+                .examenId(dto.examenId())
+                .cantidad(dto.getCantidadSegura())
+                .desIndicacion(dto.desIndicacion())
+                .desConsideraciones(dto.desConsideraciones())
+                .ordenItem(nextItem)
+                .estadoDetalle("01")
+                .activo("S")
+                .creadoPor(medicoId)
+                .build();
+    }
+
     // =====================================================
-    // 🔧 MÉTODOS HELPER PARA DESCRIPCIONES
+    // 🔥 JSON ATÓMICO CON TEXT BLOCKS (JAVA 17)
     // =====================================================
 
-    private String getEstadoDetalleDescripcion(String estado) {
-        switch (estado) {
-            case "01": return "Pendiente";
-            case "02": return "En Proceso";
-            case "03": return "Completado";
-            case "04": return "Cancelado";
-            default: return "Desconocido";
+    private String prepararJsonParaCreacion(OrdenCabDTO ordenDTO) {
+        try {
+            var examenesJson = objectMapper.writeValueAsString(
+                    ordenDTO.examenes().stream()
+                            .map(examen -> Map.of(
+                                    "examen_id", examen.examenId(),
+                                    "cantidad", examen.getCantidadSegura(),
+                                    "des_indicacion", Optional.ofNullable(examen.desIndicacion()).orElse(""),
+                                    "des_consideraciones", Optional.ofNullable(examen.desConsideraciones()).orElse("")
+                            ))
+                            .toList()
+            );
+
+            // Text block con formateo (Java 17) ✅
+            return """
+                {
+                    "paciente_id": %d,
+                    "medico_id": %d,
+                    "tipo_origen": "%s",
+                    "origen_id": %d,
+                    "tipo_orden": "%s",
+                    "prioridad": "%s",
+                    "diagnostico_principal": "%s",
+                    "justificacion_clinica": "%s",
+                    "fecha_programada": "%s",
+                    "examenes": %s
+                }
+                """.formatted(
+                    ordenDTO.pacienteId(),
+                    ordenDTO.medicoId(),
+                    ordenDTO.tipoOrigen(),
+                    ordenDTO.origenId(),
+                    ordenDTO.tipoOrden(),
+                    Optional.ofNullable(ordenDTO.prioridad()).orElse("N"),
+                    Optional.ofNullable(ordenDTO.diagnosticoPrincipal()).orElse(""),
+                    ordenDTO.justificacionClinica(),
+                    ordenDTO.fechaProgramada() != null ?
+                            ordenDTO.fechaProgramada().toString() :
+                            LocalDateTime.now().toLocalDate().toString(),
+                    examenesJson
+            );
+        } catch (Exception e) {
+            throw new OrdenBusinessException("ORDEN_106",
+                    "Error preparando datos para crear orden: " + e.getMessage());
         }
     }
 
-    private String getCategoriaDescripcion(String categoria) {
-        switch (categoria) {
-            case "LAB": return "Laboratorio";
-            case "IMG": return "Imagenología";
-            case "PROC": return "Procedimiento";
-            case "Hematología": return "Hematología";
-            case "Bioquímica": return "Bioquímica";
-            case "Oncología": return "Oncología";
-            case "Cardiología": return "Cardiología";
-            case "Neumología": return "Neumología";
-            default: return "Otros";
+    private String prepararJsonParaActualizacion(Long ordenId, ActualizarOrdenDTO dto, Long medicoId) {
+        try {
+            var jsonData = new HashMap<String, Object>();
+            jsonData.put("orden_id", ordenId);
+            jsonData.put("medico_id", medicoId);
+
+            // Solo agregar campos que no sean null
+            Optional.ofNullable(dto.diagnosticoPrincipal()).ifPresent(v -> jsonData.put("diagnostico_principal", v));
+            Optional.ofNullable(dto.justificacionClinica()).ifPresent(v -> jsonData.put("justificacion_clinica", v));
+            Optional.ofNullable(dto.prioridad()).ifPresent(v -> jsonData.put("prioridad", v));
+            Optional.ofNullable(dto.fechaProgramada()).ifPresent(v -> jsonData.put("fecha_programada", v.toString()));
+
+            return objectMapper.writeValueAsString(jsonData);
+        } catch (Exception e) {
+            throw new OrdenBusinessException("ORDEN_107",
+                    "Error preparando datos para actualizar orden: " + e.getMessage());
         }
+    }
+
+    private String prepararJsonParaCambioEstado(Long ordenId, String nuevoEstado, Long medicoId, String observacion) {
+        try {
+            // Switch expression para descripción (Java 17) ✅
+            var descripcionEstado = switch (nuevoEstado) {
+                case "01" -> "Solicitada";
+                case "02" -> "Programada";
+                case "03" -> "En Proceso";
+                case "04" -> "Completada";
+                case "05" -> "Cancelada";
+                default -> throw new OrdenBusinessException("ORDEN_108", "Estado inválido: " + nuevoEstado);
+            };
+
+            // Text block con observación opcional (Java 17) ✅
+            var jsonTemplate = observacion != null && !observacion.isBlank() ?
+                    """
+                    {
+                        "orden_id": %d,
+                        "estado": "%s",
+                        "estado_descripcion": "%s",
+                        "medico_id": %d,
+                        "observacion": "%s"
+                    }
+                    """ :
+                    """
+                    {
+                        "orden_id": %d,
+                        "estado": "%s",
+                        "estado_descripcion": "%s",
+                        "medico_id": %d
+                    }
+                    """;
+
+            return observacion != null && !observacion.isBlank() ?
+                    jsonTemplate.formatted(ordenId, nuevoEstado, descripcionEstado, medicoId, observacion) :
+                    jsonTemplate.formatted(ordenId, nuevoEstado, descripcionEstado, medicoId);
+
+        } catch (Exception e) {
+            throw new OrdenBusinessException("ORDEN_109",
+                    "Error preparando datos para cambio de estado: " + e.getMessage());
+        }
+    }
+
+    private Long extraerIdDeRespuestaJson(String respuestaJson) {
+        try {
+            var jsonNode = objectMapper.readTree(respuestaJson);
+            return jsonNode.path("orden_id").asLong();
+        } catch (Exception e) {
+            throw new OrdenBusinessException("ORDEN_110",
+                    "Error extrayendo ID de respuesta PostgreSQL: " + e.getMessage());
+        }
+    }
+
+    // =====================================================
+    // 🎯 MÉTODOS HELPER ADICIONALES CON SWITCH EXPRESSIONS
+    // =====================================================
+
+    /**
+     * Aplicar cambios a examen con pattern matching
+     */
+    private OrdenDet aplicarCambiosAExamen(OrdenDet examen, ActualizarOrdenDTO.ModificarExamenDTO examenDTO, Long medicoId) {
+        Optional.ofNullable(examenDTO.cantidad()).ifPresent(examen::setCantidad);
+        Optional.ofNullable(examenDTO.desIndicacion()).ifPresent(examen::setDesIndicacion);
+        Optional.ofNullable(examenDTO.desConsideraciones()).ifPresent(examen::setDesConsideraciones);
+
+        examen.setActualizadoPor(medicoId);
+        examen.setActualizadoEn(LocalDateTime.now());
+        return examen;
+    }
+
+    /**
+     * Convertir examen entity a DTO con validaciones
+     */
+    private OrdenExamenDTO convertirExamenEntityADTO(OrdenDet examen) {
+        return OrdenExamenDTO.crear(
+                examen.getId(),
+                examen.getExamenId(),
+                "Examen ID: " + examen.getExamenId(),
+                examen.getCantidad(),
+                examen.getEstadoDetalle()
+        );
+    }
+
+    /**
+     * Convertir Object[] a EstadisticaDTO para Estados con switch expression
+     */
+    private EstadisticaDTO convertirObjectArrayAEstadisticaEstado(Object[] row) {
+        String categoria = (String) row[0];
+        Long total = ((Number) row[1]).longValue();
+
+        String descripcion = switch (categoria) {
+            case "01" -> "Solicitada";
+            case "02" -> "Programada";
+            case "03" -> "En Proceso";
+            case "04" -> "Completada";
+            case "05" -> "Cancelada";
+            default -> "Desconocido";
+        };
+
+        return EstadisticaImpl.crear(categoria, total, descripcion);
+    }
+
+    /**
+     * Convertir Object[] a EstadisticaDTO para Tipos
+     */
+    private EstadisticaDTO convertirObjectArrayAEstadisticaTipo(Object[] row) {
+        String categoria = (String) row[0];
+        Long total = ((Number) row[1]).longValue();
+
+        String descripcion = switch (categoria) {
+            case "LAB" -> "Laboratorio";
+            case "IMG" -> "Imagenología";
+            case "PROC" -> "Procedimientos";
+            case "FUNC" -> "Pruebas Funcionales";
+            default -> categoria;
+        };
+
+        return EstadisticaImpl.crear(categoria, total, descripcion);
+    }
+
+    /**
+     * Convertir Object[] a EstadisticaDTO para Prioridades
+     */
+    private EstadisticaDTO convertirObjectArrayAEstadisticaPrioridad(Object[] row) {
+        String categoria = (String) row[0];
+        Long total = ((Number) row[1]).longValue();
+
+        String descripcion = switch (categoria) {
+            case "E" -> "Emergencia";
+            case "U" -> "Urgente";
+            case "N" -> "Normal";
+            default -> categoria;
+        };
+
+        return EstadisticaImpl.crear(categoria, total, descripcion);
+    }
+
+    /**
+     * Convertir Object[] a EstadisticaDTO para Categorías
+     */
+    private EstadisticaDTO convertirObjectArrayAEstadisticaCategoria(Object[] row) {
+        String categoria = (String) row[0];
+        Long total = ((Number) row[1]).longValue();
+
+        String descripcion = switch (categoria) {
+            case "Hematología" -> "Hematología";
+            case "Bioquímica" -> "Bioquímica";
+            case "Microbiología" -> "Microbiología";
+            case "Inmunología" -> "Inmunología";
+            case "Radiología" -> "Radiología";
+            case "Cardiología" -> "Cardiología";
+            default -> "Categoría: " + categoria;
+        };
+
+        return EstadisticaImpl.crear(categoria, total, descripcion);
     }
 
     /**
      * Convertir Object[] a ExamenEstadisticaDTO
      */
     private ExamenEstadisticaDTO convertirObjectArrayAExamenEstadistica(Object[] row) {
-        return new ExamenEstadisticaDTO() {
-            @Override
-            public String getCodigoExamen() {
-                return (String) row[0];
-            }
+        String codigoExamen = (String) row[0];
+        String nombreExamen = (String) row[1];
+        Long totalSolicitado = ((Number) row[2]).longValue();
+        String categoria = row.length > 3 ? (String) row[3] : "";
 
-            @Override
-            public String getNombreExamen() {
-                return (String) row[1];
-            }
-
-            @Override
-            public Long getTotalSolicitado() {
-                return ((Number) row[2]).longValue();
-            }
-
-            @Override
-            public String getCategoria() {
-                return ""; // Se puede agregar si está en la query
-            }
-        };
+        return ExamenEstadisticaImpl.crear(codigoExamen, nombreExamen, totalSolicitado, categoria);
     }
 
-    @Override
-    @Transactional
-    public OrdenExamenDTO actualizarExamenEnOrden(Long ordenId, Long examenDetalleId,
-                                                  ActualizarOrdenDTO.ModificarExamenDTO examenDTO, Long medicoId) {
-        log.info("✏️ Actualizando examen {} en orden: {}", examenDetalleId, ordenId);
+    // =====================================================
+    // 🏗️ RECORDS IMPLEMENTANDO INTERFACES (JAVA 17)
+    // =====================================================
 
-        return ordenDetRepository.findById(examenDetalleId)
-                .filter(examen -> examen.getOrdenCab().getId().equals(ordenId))
-                .filter(examen -> examen.esActivo())
-                .map(examen -> aplicarCambiosAExamen(examen, examenDTO, medicoId))
-                .map(ordenDetRepository::save)
-                .map(this::convertirExamenEntityADTO)
-                .orElseThrow(() -> new ExamenNotFoundException(examenDetalleId));
+    /**
+     * Record que implementa EstadisticaDTO (Java 17) ✅
+     */
+    public record EstadisticaImpl(String categoria, Long total, String descripcion)
+            implements EstadisticaDTO {
+
+        @Override
+        public String getCategoria() {
+            return categoria;
+        }
+
+        @Override
+        public Long getTotal() {
+            return total;
+        }
+
+        @Override
+        public String getDescripcion() {
+            return descripcion;
+        }
+
+        public static EstadisticaImpl crear(String categoria, Long total, String descripcion) {
+            return new EstadisticaImpl(categoria, total, descripcion);
+        }
     }
 
     /**
-     * Aplicar cambios a examen existente con campos actualizados
+     * Record que implementa ExamenEstadisticaDTO (Java 17) ✅
      */
-    private OrdenDet aplicarCambiosAExamen(OrdenDet examen, ActualizarOrdenDTO.ModificarExamenDTO examenDTO, Long medicoId) {
-        // Campos actualizados
-        Optional.ofNullable(examenDTO.getCant()).ifPresent(examen::setCantidad);
-        Optional.ofNullable(examenDTO.getDesIndicacion()).ifPresent(examen::setDesIndicacion);
-        Optional.ofNullable(examenDTO.getDesConsideraciones()).ifPresent(examen::setDesConsideraciones);
+    public record ExamenEstadisticaImpl(String codigoExamen, String nombreExamen,
+                                        Long totalSolicitado, String categoria)
+            implements ExamenEstadisticaDTO {
 
-        examen.setActualizadoPor(medicoId);
-        examen.setActualizadoEn(LocalDateTime.now());
+        @Override
+        public String getCodigoExamen() {
+            return codigoExamen;
+        }
 
-        return examen;
+        @Override
+        public String getNombreExamen() {
+            return nombreExamen;
+        }
+
+        @Override
+        public Long getTotalSolicitado() {
+            return totalSolicitado;
+        }
+
+        @Override
+        public String getCategoria() {
+            return categoria;
+        }
+
+        public static ExamenEstadisticaImpl crear(String codigo, String nombre, Long total, String cat) {
+            return new ExamenEstadisticaImpl(codigo, nombre, total, cat);
+        }
     }
 
-    @Override
-    @Transactional
-    public void eliminarExamenDeOrden(Long ordenId, Long examenDetalleId, Long medicoId) {
-        log.info("🗑️ Eliminando examen {} de orden: {}", examenDetalleId, ordenId);
+    /**
+     * Comparador de prioridades con switch expression
+     */
+    private int compararPrioridades(String p1, String p2) {
+        var peso1 = switch (p1 != null ? p1 : "N") {
+            case "E" -> 3; // Emergencia
+            case "U" -> 2; // Urgente
+            case "N" -> 1; // Normal
+            default -> 0;
+        };
 
-        ordenDetRepository.findById(examenDetalleId)
-                .filter(examen -> examen.getOrdenCab().getId().equals(ordenId))
-                .filter(examen -> examen.esActivo())
-                .ifPresentOrElse(
-                        examen -> {
-                            examen.setActivo("N");
-                            examen.setActualizadoPor(medicoId);
-                            examen.setActualizadoEn(LocalDateTime.now());
-                            ordenDetRepository.save(examen);
-                        },
-                        () -> { throw new ExamenNotFoundException(examenDetalleId); }
-                );
+        var peso2 = switch (p2 != null ? p2 : "N") {
+            case "E" -> 3;
+            case "U" -> 2;
+            case "N" -> 1;
+            default -> 0;
+        };
+
+        return Integer.compare(peso2, peso1); // Orden descendente
     }
 
-    @Override
-    public List<EstadisticaDTO> obtenerEstadisticasPorTipo() {
-        log.info("📊 Generando estadísticas por tipo de orden");
-
-        return ordenCabRepository.findEstadisticasPorTipo()
-                .stream()
-                .map(this::convertirObjectArrayAEstadistica)
-                .sorted(Comparator.comparing(EstadisticaDTO::getTotal).reversed())
-                .collect(Collectors.toList());
+    /**
+     * Obtener descripción de origen con switch expression
+     */
+    private String obtenerDescripcionOrigen(String tipoOrigen) {
+        return switch (tipoOrigen != null ? tipoOrigen : "") {
+            case "HOS" -> "Hospitalización";
+            case "AMB" -> "Ambulatorio";
+            case "EMR" -> "Emergencia";
+            case "CON" -> "Consultorio";
+            default -> "Desconocido";
+        };
     }
 
-    @Override
-    public List<EstadisticaDTO> obtenerEstadisticasPorPrioridad() {
-        log.info("⚡ Generando estadísticas por prioridad");
-
-        return ordenCabRepository.findEstadisticasPorPrioridad()
-                .stream()
-                .map(this::convertirObjectArrayAEstadistica)
-                .sorted(Comparator.comparing(EstadisticaDTO::getTotal).reversed())
-                .collect(Collectors.toList());
+    /**
+     * Obtener descripción de prioridad con switch expression
+     */
+    private String obtenerDescripcionPrioridad(String prioridad) {
+        return switch (prioridad != null ? prioridad : "N") {
+            case "E" -> "Emergencia";
+            case "U" -> "Urgente";
+            case "N" -> "Normal";
+            default -> "Normal";
+        };
     }
 
-    @Override
-    public List<EstadisticaDTO> obtenerEstadisticasPorCategoria() {
-        log.info("🏷️ Generando estadísticas por categoría de examen");
-
-        return ordenDetRepository.findEstadisticasPorCategoria()
-                .stream()
-                .map(this::convertirObjectArrayAEstadistica)
-                .sorted(Comparator.comparing(EstadisticaDTO::getTotal).reversed())
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean existeOrdenPorNumero(String numeroOrden) {
-        return ordenCabRepository.findByNumeroOrden(numeroOrden)
-                .map(esActiva::test)
-                .orElse(false);
+    /**
+     * Obtener descripción de estado con switch expression
+     */
+    private String obtenerDescripcionEstado(String estado) {
+        return switch (estado != null ? estado : "01") {
+            case "01" -> "Solicitada";
+            case "02" -> "Programada";
+            case "03" -> "En Proceso";
+            case "04" -> "Completada";
+            case "05" -> "Cancelada";
+            default -> "Desconocido";
+        };
     }
 }

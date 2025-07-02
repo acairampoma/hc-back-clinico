@@ -1,0 +1,69 @@
+# =====================================================
+# 📊 CONFIGURACIÓN HL7 - SOLO POSTGRESQL SIMPLE
+# =====================================================
+# 👨‍💻 Desarrollador: Alan Cairampoma
+# 🎯 Objetivo: Servidor HL7 básico con PostgreSQL únicamente
+# =====================================================
+
+spring:
+  application:
+    name: microservicio-hl7
+
+  # =====================================================
+  # 🗃️ POSTGRESQL ÚNICAMENTE
+  # =====================================================
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bd_hdigital
+    username: postgres
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
+
+# =====================================================
+# 🌐 SERVIDOR WEB BÁSICO
+# =====================================================
+server:
+  port: 8001
+  servlet:
+    context-path: /api/v1/hl7
+
+# =====================================================
+# 📡 CONFIGURACIÓN HL7 BÁSICA
+# =====================================================
+hl7:
+  server:
+    port: 2575
+    host: 0.0.0.0
+    auto-ack: true
+
+  daemon:
+    enabled: true
+    check-interval: 5000
+
+  outbound:
+    enabled: true
+
+# =====================================================
+# 📝 LOGGING BÁSICO
+# =====================================================
+logging:
+  level:
+    root: INFO
+    com.formacionbdi.microservicios.app.hl7: DEBUG
+
+# =====================================================
+# 📊 ACTUATOR BÁSICO
+# =====================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

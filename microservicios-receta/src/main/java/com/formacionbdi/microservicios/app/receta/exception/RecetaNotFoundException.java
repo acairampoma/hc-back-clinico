@@ -1,60 +1,30 @@
 package com.formacionbdi.microservicios.app.receta.exception;
 
+import lombok.Getter;
+
 /**
  * 🔍 Excepción para recursos no encontrados en recetas
  */
+@Getter
 public class RecetaNotFoundException extends RuntimeException {
+    private final Long recursoId;
 
-    private final String recurso;
-    private final String identificador;
-
-    public RecetaNotFoundException(String recurso, String identificador) {
-        super(String.format("%s no encontrado con identificador: %s", recurso, identificador));
-        this.recurso = recurso;
-        this.identificador = identificador;
+    private RecetaNotFoundException(String mensaje, Long recursoId) {
+        super(mensaje);
+        this.recursoId = recursoId;
     }
-
-    public RecetaNotFoundException(String message) {
-        super(message);
-        this.recurso = "Recurso";
-        this.identificador = "desconocido";
-    }
-
-    public String getRecurso() {
-        return recurso;
-    }
-
-    public String getIdentificador() {
-        return identificador;
-    }
-
-    // ===== MÉTODOS ESTÁTICOS PARA RECURSOS ESPECÍFICOS =====
 
     public static RecetaNotFoundException receta(Long recetaId) {
-        return new RecetaNotFoundException("Receta", recetaId.toString());
-    }
-
-    public static RecetaNotFoundException recetaPorNumero(String numeroReceta) {
-        return new RecetaNotFoundException("Receta", numeroReceta);
+        return new RecetaNotFoundException(
+            String.format("No se encontró la receta con ID %d", recetaId),
+            recetaId
+        );
     }
 
     public static RecetaNotFoundException medicamento(Long medicamentoId) {
-        return new RecetaNotFoundException("Medicamento", medicamentoId.toString());
-    }
-
-    public static RecetaNotFoundException medicamentoPorCodigo(String codigoMedicamento) {
-        return new RecetaNotFoundException("Medicamento", codigoMedicamento);
-    }
-
-    public static RecetaNotFoundException paciente(Long pacienteId) {
-        return new RecetaNotFoundException("Paciente", pacienteId.toString());
-    }
-
-    public static RecetaNotFoundException medico(Long medicoId) {
-        return new RecetaNotFoundException("Médico", medicoId.toString());
-    }
-
-    public static RecetaNotFoundException hospitalizacion(Long hospitalizacionId) {
-        return new RecetaNotFoundException("Hospitalización", hospitalizacionId.toString());
+        return new RecetaNotFoundException(
+            String.format("No se encontró el medicamento con ID %d", medicamentoId),
+            medicamentoId
+        );
     }
 }

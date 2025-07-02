@@ -4,9 +4,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hibernate.annotations.Type;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * 🔍 Entidad que mapea directamente el JSON de la vista PostgreSQL
@@ -40,7 +42,7 @@ public class BusquedaUnificada {
     private String estado;
 
     @Column(name = "datos_json", columnDefinition = "json")
-    @Type(type = "org.hibernate.type.TextType")
+    @JdbcTypeCode(SqlTypes.JSON)
     @JsonProperty("datos_json")
     private String datosJson;
 

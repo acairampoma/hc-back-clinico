@@ -1,7 +1,7 @@
 package com.formacionbdi.microservicios.app.receta.controllers;
 
 import com.formacionbdi.microservicios.app.receta.models.dto.*;
-import com.formacionbdi.microservicios.app.receta.models.response.ApiResponse;
+import com.formacionbdi.microservicios.commons.response.ApiResponse;
 import com.formacionbdi.microservicios.app.receta.services.RecetaService;
 
 import lombok.RequiredArgsConstructor;
@@ -10,36 +10,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * 📋 CONTROLLER para gestión de recetas médicas
- * Aplicando programación funcional y nuestro patrón exitoso
- *
- * 🏆 TÉCNICA USADA EN NOTAS Y RECETAS:
- * - Entity → DTO → Repository → Exception → Service → Service Impl → Controller
- * - Exception Layer maneja TODO (validaciones, reglas de negocio)
- * - Service Impl súper limpio (programación funcional)
- * - Controller con helper funcional para manejo de respuestas
- * - JOIN inteligente para performance (evita llamadas entre microservicios)
- * - Patrón CAB+DET transaccional
+ * CONTROLLER REFACTORIZADO para gestión de recetas médicas
+ * Usa ApiResponse común del package commons
+ * Patrón con @RequestMapping a nivel de clase para compatibilidad con API Gateway
+ * Service delegado a funciones PostgreSQL atómicas
+ * Programación funcional y manejo de errores robusto
  */
 @RestController
 @RequestMapping("/recetas")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class RecetaController {
 
     private final RecetaService recetaService;
 
-    // ===== 📖 CONSULTAS PRINCIPALES =====
+    // ===== CONSULTAS PRINCIPALES =====
 
     /**
      * Obtiene recetas por tipo de origen y origen ID
@@ -50,7 +44,7 @@ public class RecetaController {
             @RequestParam String tipo_origen,
             @RequestParam @NotNull @Min(1) Long origen_id) {
 
-        log.info("📖 Obteniendo recetas para {} ID {}", tipo_origen, origen_id);
+        log.info(" Obteniendo recetas para {} ID {}", tipo_origen, origen_id);
 
         return ejecutarConManejo(() -> {
             var recetas = recetaService.obtenerRecetasPorOrigen(tipo_origen, origen_id);
@@ -68,7 +62,7 @@ public class RecetaController {
     public ResponseEntity<ApiResponse<RecetaCompletaDTO>> obtenerRecetaPorId(
             @PathVariable @NotNull @Min(1) Long recetaId) {
 
-        log.info("📖 Obteniendo receta ID {}", recetaId);
+        log.info(" Obteniendo receta ID {}", recetaId);
 
         return ejecutarConManejo(() ->
                 recetaService.obtenerRecetaPorId(recetaId)
@@ -85,7 +79,7 @@ public class RecetaController {
     public ResponseEntity<ApiResponse<RecetaCompletaDTO>> obtenerRecetaPorNumero(
             @PathVariable String numeroReceta) {
 
-        log.info("📖 Obteniendo receta número {}", numeroReceta);
+        log.info(" Obteniendo receta número {}", numeroReceta);
 
         return ejecutarConManejo(() ->
                 recetaService.obtenerRecetaPorNumero(numeroReceta)
@@ -103,7 +97,7 @@ public class RecetaController {
     public ResponseEntity<ApiResponse<List<RecetaCompletaDTO>>> obtenerRecetasPorPaciente(
             @PathVariable @NotNull @Min(1) Long pacienteId) {
 
-        log.info("📖 Obteniendo recetas del paciente {}", pacienteId);
+        log.info(" Obteniendo recetas del paciente {}", pacienteId);
 
         return ejecutarConManejo(() -> {
             var recetas = recetaService.obtenerRecetasPorPaciente(pacienteId);
@@ -113,24 +107,24 @@ public class RecetaController {
         });
     }
 
-    // ===== 📝 OPERACIONES CRUD =====
+    // ===== OPERACIONES CRUD =====
 
     /**
-     * Crea una nueva receta con lógica de firma automática
+     * Crea una nueva receta con transacción PostgreSQL atómica
      * POST /recetas/crear
      *
-     * 🔥 INCLUYE:
+     * INCLUYE:
      * - Validación regla: No receta duplicada mismo día
      * - Validación cantidad: ≤ 2 unidades por medicamento
      * - Auto-generación número de receta
      * - Lógica de firma automática
-     * - Transacción CAB+DET
+     * - Transacción CAB+DET atómica en PostgreSQL
      */
     @PostMapping("/crear")
     public ResponseEntity<ApiResponse<RecetaCompletaDTO>> crearReceta(
             @Valid @RequestBody RecetaCabDTO recetaDTO) {
 
-        log.info("📝 Creando receta para {} ID {} por médico {}",
+        log.info(" Creando receta para {} ID {} por médico {}",
                 recetaDTO.getTipoOrigen(), recetaDTO.getOrigenId(), recetaDTO.getCreadoPor());
 
         return ejecutarConManejo(() -> {
@@ -144,7 +138,7 @@ public class RecetaController {
      * Actualiza una receta existente
      * PUT /recetas/{recetaId}
      *
-     * 🔒 VALIDACIONES:
+     * VALIDACIONES:
      * - Solo hasta 24h antes de vencimiento
      * - Solo el médico creador
      * - Solo recetas activas
@@ -155,7 +149,7 @@ public class RecetaController {
             @Valid @RequestBody ActualizarRecetaDTO actualizarDTO,
             @RequestParam Long medicoId) {
 
-        log.info("🔄 Actualizando receta {} por médico {}", recetaId, medicoId);
+        log.info(" Actualizando receta {} por médico {}", recetaId, medicoId);
 
         return ejecutarConManejo(() -> {
             // Convertir ActualizarRecetaDTO a RecetaCabDTO
@@ -165,7 +159,7 @@ public class RecetaController {
                     .fechaVencimiento(actualizarDTO.getFechaVencimiento())
                     .build();
 
-            // Usar tu método existente
+            // Usar función PostgreSQL atómica
             RecetaCompletaDTO resultado = recetaService.actualizarReceta(recetaId, recetaDTO, medicoId);
 
             return ApiResponse.success(resultado, "Receta actualizada exitosamente");
@@ -184,7 +178,7 @@ public class RecetaController {
             @RequestParam String nuevo_estado,
             @RequestParam @NotNull @Min(1) Long medicoId) {
 
-        log.info("📊 Cambiando estado de receta {} a {} por médico {}",
+        log.info(" Cambiando estado de receta {} a {} por médico {}",
                 recetaId, nuevo_estado, medicoId);
 
         return ejecutarConManejo(() -> {
@@ -195,7 +189,7 @@ public class RecetaController {
         });
     }
 
-    // ===== 🔍 BÚSQUEDAS DE VADEMÉCUM =====
+    // ===== BÚSQUEDAS DE VADEMÉCUM =====
 
     /**
      * Busca medicamentos en el vademécum
@@ -206,7 +200,7 @@ public class RecetaController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String categoria) {
 
-        log.info("🔍 Buscando medicamentos: '{}', categoría: '{}'", q, categoria);
+        log.info(" Buscando medicamentos: '{}', categoría: '{}'", q, categoria);
 
         return ejecutarConManejo(() -> {
             var medicamentos = recetaService.buscarMedicamentos(q, categoria);
@@ -243,7 +237,7 @@ public class RecetaController {
         });
     }
 
-    // ===== 📊 ESTADÍSTICAS =====
+    // ===== ESTADÍSTICAS =====
 
     /**
      * Obtiene estadísticas de recetas por médico
@@ -253,7 +247,7 @@ public class RecetaController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> obtenerEstadisticasMedico(
             @PathVariable @NotNull @Min(1) Long medicoId) {
 
-        log.info("📊 Obteniendo estadísticas del médico {}", medicoId);
+        log.info(" Obteniendo estadísticas del médico {}", medicoId);
 
         return ejecutarConManejo(() -> {
             var estadisticas = recetaService.obtenerEstadisticasMedico(medicoId);
@@ -276,7 +270,7 @@ public class RecetaController {
         });
     }
 
-    // ===== 🛠️ UTILIDADES =====
+    // ===== UTILIDADES =====
 
     /**
      * Health Check del microservicio
@@ -287,9 +281,11 @@ public class RecetaController {
         Map<String, Object> health = Map.of(
                 "status", "UP",
                 "microservicio", "recetas-medicas",
-                "version", "1.0.0",
+                "version", "2.0.0",
                 "puerto", 8005,
                 "timestamp", LocalDateTime.now(),
+                "arquitectura", "PostgreSQL Functions + Java Service Layer",
+                "transacciones", "Atómicas en PostgreSQL",
                 "endpoints_disponibles", List.of(
                         "GET /recetas?tipo_origen={tipo}&origen_id={id}",
                         "GET /recetas/{recetaId}",
@@ -301,18 +297,24 @@ public class RecetaController {
                         "GET /recetas/medicamentos/buscar"
                 ),
                 "reglas_negocio", List.of(
-                        "🔒 No receta duplicada mismo día",
-                        "⏰ Modificación hasta 24h antes vencimiento",
-                        "💊 Cantidad máxima 2 unidades por medicamento",
-                        "✍️ Firma automática según condiciones",
-                        "🔗 JOIN inteligente con vademécum"
+                        " No receta duplicada mismo día",
+                        " Modificación hasta 24h antes vencimiento",
+                        " Cantidad máxima 2 unidades por medicamento",
+                        " Firma automática según condiciones",
+                        " JOIN inteligente con vademécum",
+                        " Transacciones PostgreSQL atómicas"
+                ),
+                "funciones_postgresql", List.of(
+                        "procesar_receta_http('POST') - Crear receta completa",
+                        "procesar_receta_http('PUT') - Actualizar con operaciones granulares",
+                        "procesar_receta_http('PATCH') - Cambios específicos"
                 )
         );
 
         return ResponseEntity.ok(ApiResponse.success(health, "Microservicio de recetas operativo"));
     }
 
-    // ===== 🔧 HELPER FUNCIONAL =====
+    // ===== HELPER FUNCIONAL =====
 
     private <T> ResponseEntity<ApiResponse<T>> ejecutarConManejo(Supplier<ApiResponse<T>> operacion) {
         return ejecutarConManejo(operacion, HttpStatus.OK);
@@ -325,7 +327,7 @@ public class RecetaController {
             var resultado = operacion.get();
             return ResponseEntity.status(statusExito).body(resultado);
         } catch (Exception e) {
-            log.error("❌ Error en operación de receta: {}", e.getMessage(), e);
+            log.error(" Error en operación de receta: {}", e.getMessage(), e);
             throw e; // Re-lanzar para que lo maneje GlobalExceptionHandler
         }
     }

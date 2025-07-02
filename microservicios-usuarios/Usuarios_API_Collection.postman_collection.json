@@ -1,0 +1,377 @@
+{
+	"info": {
+		"_postman_id": "d7a3d8e7-9c5b-4c2e-a5d2-3f8b9e7c1d6c",
+		"name": "Microservicio Usuarios API",
+		"description": "Colección para probar todos los endpoints del microservicio de usuarios.\n\nCreado por Alan Cairampoma - Lima, Perú",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Usuarios",
+			"item": [
+				{
+					"name": "Listar todos los usuarios",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/users",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Obtiene todos los usuarios registrados en el sistema"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener usuario por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/users/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Obtiene un usuario específico por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar usuario por nombre de usuario",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/users/username/acairamp",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users",
+								"username",
+								"acairamp"
+							]
+						},
+						"description": "Busca un usuario por su nombre de usuario"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar usuario por email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/users/email/acairamp@example.com",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users",
+								"email",
+								"acairamp@example.com"
+							]
+						},
+						"description": "Busca un usuario por su dirección de correo electrónico"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar usuarios habilitados",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/users/enabled",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users",
+								"enabled"
+							]
+						},
+						"description": "Obtiene todos los usuarios habilitados en el sistema"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"nuevo_usuario\",\n    \"password\": \"contraseña_segura\",\n    \"email\": \"nuevo@example.com\",\n    \"firstName\": \"Nuevo\",\n    \"lastName\": \"Usuario\",\n    \"enabled\": true,\n    \"roles\": [\n        \"ROLE_USER\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "localhost:8091/api/users",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Crea un nuevo usuario en el sistema"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar usuario",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"usuario_actualizado\",\n    \"email\": \"actualizado@example.com\",\n    \"firstName\": \"Usuario\",\n    \"lastName\": \"Actualizado\",\n    \"enabled\": true,\n    \"roles\": [\n        \"ROLE_USER\",\n        \"ROLE_ADMIN\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "localhost:8091/api/users/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Actualiza un usuario existente por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar usuario",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/users/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Elimina un usuario por su ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión de usuarios"
+		},
+		{
+			"name": "Clientes OAuth",
+			"item": [
+				{
+					"name": "Listar todos los clientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/clients",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"clients"
+							]
+						},
+						"description": "Obtiene todos los clientes OAuth registrados"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener cliente por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/clients/frontend-app",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"clients",
+								"frontend-app"
+							]
+						},
+						"description": "Obtiene un cliente OAuth específico por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar clientes activos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/clients/active",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"clients",
+								"active"
+							]
+						},
+						"description": "Obtiene todos los clientes OAuth activos"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear cliente OAuth",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clientId\": \"nuevo-cliente\",\n    \"clientSecret\": \"secreto-seguro\",\n    \"scope\": \"read,write\",\n    \"authorizedGrantTypes\": \"password,refresh_token,client_credentials\",\n    \"accessTokenValidity\": 3600,\n    \"refreshTokenValidity\": 7200,\n    \"additionalInformation\": \"Cliente para aplicación móvil\",\n    \"autoApprove\": true,\n    \"active\": true\n}"
+						},
+						"url": {
+							"raw": "localhost:8091/api/clients",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"clients"
+							]
+						},
+						"description": "Crea un nuevo cliente OAuth"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar cliente OAuth",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clientSecret\": \"nuevo-secreto-seguro\",\n    \"scope\": \"read,write\",\n    \"authorizedGrantTypes\": \"password,refresh_token\",\n    \"accessTokenValidity\": 7200,\n    \"refreshTokenValidity\": 14400,\n    \"additionalInformation\": \"Cliente actualizado\",\n    \"autoApprove\": true,\n    \"active\": true\n}"
+						},
+						"url": {
+							"raw": "localhost:8091/api/clients/frontend-app",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"clients",
+								"frontend-app"
+							]
+						},
+						"description": "Actualiza un cliente OAuth existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar cliente OAuth",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8091/api/clients/frontend-app",
+							"host": [
+								"localhost"
+							],
+							"port": "8091",
+							"path": [
+								"api",
+								"clients",
+								"frontend-app"
+							]
+						},
+						"description": "Elimina un cliente OAuth por su ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión de clientes OAuth"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:8091/api",
+			"type": "string"
+		}
+	]
+}

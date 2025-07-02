@@ -27,7 +27,13 @@ public class GatewaySecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        // ✅ RUTAS PÚBLICAS
+                        // 🔓 RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
+                        .pathMatchers("/v3/api-docs/**").permitAll()
+                        .pathMatchers("/swagger-ui/**").permitAll()
+                        .pathMatchers("/swagger-ui.html").permitAll()
+                        .pathMatchers("/webjars/**").permitAll()
+                        .pathMatchers("/*/v3/api-docs").permitAll()
+                        .pathMatchers("/api/*/v3/api-docs").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/oauth2/**").permitAll()
                         .pathMatchers("/.well-known/**").permitAll()

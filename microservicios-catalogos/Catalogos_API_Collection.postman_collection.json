@@ -1,0 +1,404 @@
+{
+	"info": {
+		"_postman_id": "e7a3d8e7-9c5b-4c2e-a5d2-3f8b9e7c1d6b",
+		"name": "Microservicio Catálogos API",
+		"description": "Colección para probar todos los endpoints del microservicio de catálogos médicos.\n\nCreado por Alan Cairampoma - Lima, Perú",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Búsquedas Generales",
+			"item": [
+				{
+					"name": "Búsqueda por término",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/buscar?q=paracetamol",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "paracetamol",
+									"description": "Término de búsqueda"
+								}
+							]
+						},
+						"description": "Búsqueda general en todos los catálogos"
+					},
+					"response": []
+				},
+				{
+					"name": "Búsqueda por código",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/codigo/MED001",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"codigo",
+								"MED001"
+							]
+						},
+						"description": "Búsqueda por código exacto"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para búsquedas generales en catálogos"
+		},
+		{
+			"name": "Búsquedas por Tipo",
+			"item": [
+				{
+					"name": "Búsqueda de exámenes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/examenes/buscar?q=sangre",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"examenes",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "sangre",
+									"description": "Término de búsqueda para exámenes"
+								}
+							]
+						},
+						"description": "Búsqueda específica de exámenes"
+					},
+					"response": []
+				},
+				{
+					"name": "Búsqueda de medicamentos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/medicamentos/buscar?q=amoxicilina",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"medicamentos",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "amoxicilina",
+									"description": "Término de búsqueda para medicamentos"
+								}
+							]
+						},
+						"description": "Búsqueda específica de medicamentos"
+					},
+					"response": []
+				},
+				{
+					"name": "Búsqueda de catálogos maestros",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/maestros/buscar?q=diagnostico",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"maestros",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "diagnostico",
+									"description": "Término de búsqueda para catálogos maestros"
+								}
+							]
+						},
+						"description": "Búsqueda específica en catálogos maestros"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para búsquedas específicas por tipo de catálogo"
+		},
+		{
+			"name": "Búsquedas por Categoría",
+			"item": [
+				{
+					"name": "Búsqueda por categoría",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/categoria/ANALGESICOS",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"categoria",
+								"ANALGESICOS"
+							]
+						},
+						"description": "Búsqueda por categoría específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Búsqueda en tabla específica",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/tabla/DIAGNOSTICOS",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"tabla",
+								"DIAGNOSTICOS"
+							]
+						},
+						"description": "Búsqueda en una tabla específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Búsqueda en tabla con término",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/tabla/DIAGNOSTICOS/buscar?q=respiratorio",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"tabla",
+								"DIAGNOSTICOS",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "respiratorio",
+									"description": "Término de búsqueda dentro de la tabla específica"
+								}
+							]
+						},
+						"description": "Búsqueda con término en una tabla específica"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para búsquedas por categoría o tabla específica"
+		},
+		{
+			"name": "Listados Completos",
+			"item": [
+				{
+					"name": "Todos los exámenes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/examenes",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"examenes"
+							]
+						},
+						"description": "Obtiene todos los exámenes disponibles"
+					},
+					"response": []
+				},
+				{
+					"name": "Todos los medicamentos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/medicamentos",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"medicamentos"
+							]
+						},
+						"description": "Obtiene todos los medicamentos disponibles"
+					},
+					"response": []
+				},
+				{
+					"name": "Todas las categorías",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/categorias",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"categorias"
+							]
+						},
+						"description": "Obtiene todas las categorías disponibles"
+					},
+					"response": []
+				},
+				{
+					"name": "Todos los tipos de tabla",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/tipos",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"tipos"
+							]
+						},
+						"description": "Obtiene todos los tipos de tabla disponibles"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para obtener listados completos de catálogos"
+		},
+		{
+			"name": "Sistema",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"health"
+							]
+						},
+						"description": "Health Check del microservicio"
+					},
+					"response": []
+				},
+				{
+					"name": "Info del microservicio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8009/api/catalogos/info",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"api",
+								"catalogos",
+								"info"
+							]
+						},
+						"description": "Información general del microservicio"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de sistema"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:8009/api",
+			"type": "string"
+		}
+	]
+}

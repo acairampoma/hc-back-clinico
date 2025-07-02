@@ -22,8 +22,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * 🚀 IMPLEMENTACIÓN FUNCIONAL del servicio de recetas médicas
- * ✅ PROCESAMIENTO CORRECTO DE FIRMA DIGITAL DESDE FRONTEND
+ * 🚀 RECETA SERVICE REFACTORIZADO - TRANSACCIONAL DIRECTO
+ * ✅ ELIMINAMOS lógica compleja del service
+ * ✅ DELEGAMOS transacciones atómicas al repository
+ * ✅ SERVICE queda súper limpio y funcional
+ * ✅ REPOSITORY maneja toda la complejidad de guardado
  */
 @Service
 @RequiredArgsConstructor
@@ -77,7 +80,7 @@ public class RecetaServiceImpl implements RecetaService {
                 .collect(Collectors.toList());
     }
 
-    // ===== 📝 OPERACIÓN PRINCIPAL - CREAR RECETA CON FIRMA =====
+    // ===== 📝 OPERACIÓN PRINCIPAL - USAR TUS MÉTODOS EXISTENTES =====
 
     @Override
     @Transactional
@@ -85,34 +88,39 @@ public class RecetaServiceImpl implements RecetaService {
         log.info("📝 Creando receta para {} ID {} - Firmada: {}",
                 recetaDTO.getTipoOrigen(), recetaDTO.getOrigenId(), recetaDTO.getFirmada());
 
-        // Validaciones básicas
-        validationHelper.validarCreacionReceta(recetaDTO);
+        try {
+            // 1. VALIDACIONES PREVIAS (rápidas)
+            validationHelper.validarCreacionReceta(recetaDTO);
 
-        // Convertir DTO a Entity
-        RecetaCab recetaEntity = convertirDTOaEntity(recetaDTO);
+            // 2. PREPARAR JSON PARA TU FUNCIÓN
+            String datosRecetaJson = prepararJsonParaCreacion(recetaDTO);
+            log.debug("📦 JSON preparado: {}", datosRecetaJson.substring(0, Math.min(200, datosRecetaJson.length())));
 
-        // Establecer datos automáticos
-        establecerDatosAutomaticos(recetaEntity);
+            // 3. EJECUTAR TU MÉTODO EXISTENTE crearRecetaAtomica
+            String resultadoJson = recetaCabRepository.crearRecetaAtomica(datosRecetaJson);
+            log.info("✅ Función PostgreSQL ejecutada - Resultado: {}", resultadoJson.substring(0, Math.min(100, resultadoJson.length())));
 
-        // Procesar firma digital
-        procesarFirmaDigital(recetaEntity, recetaDTO);
+            // 4. PROCESAR RESULTADO
+            JsonNode resultado = objectMapper.readTree(resultadoJson);
 
-        // Guardar cabecera
-        RecetaCab recetaGuardada = recetaCabRepository.save(recetaEntity);
-        verificarFirmaDespuesDelSave(recetaGuardada);
+            if (resultado.get("success").asBoolean()) {
+                Long recetaId = resultado.get("receta_id").asLong();
+                log.info("✅ Receta creada exitosamente ID: {}", recetaId);
 
+                // 5. RETORNAR RECETA COMPLETA
+                return recetaCabRepository.findById(recetaId)
+                        .map(toCompletaDTO)
+                        .orElseThrow(() -> RecetaNotFoundException.receta(recetaId));
+            } else {
+                String error = resultado.get("error_message").asText();
+                log.error("❌ Error en función PostgreSQL: {}", error);
+                throw new RecetaBusinessException(error);
+            }
 
-        log.info("✅ Receta guardada ID: {} - Firmada: {} - Firma Digital: {}",
-                recetaGuardada.getId(),
-                recetaGuardada.getFirmada(),
-                recetaGuardada.getFirmaDigital() != null ? "SÍ" : "NO");
-
-        // Guardar medicamentos
-        if (recetaDTO.getMedicamentos() != null && !recetaDTO.getMedicamentos().isEmpty()) {
-            guardarMedicamentosDetalle(recetaGuardada.getId(), recetaDTO.getMedicamentos());
+        } catch (Exception e) {
+            log.error("❌ Error creando receta: {}", e.getMessage(), e);
+            throw new RecetaBusinessException("Error creando receta: " + e.getMessage());
         }
-
-        return toCompletaDTO.apply(recetaGuardada);
     }
 
     @Override
@@ -120,15 +128,33 @@ public class RecetaServiceImpl implements RecetaService {
     public RecetaCompletaDTO actualizarReceta(Long recetaId, RecetaCabDTO recetaDTO, Long medicoId) {
         log.info("🔄 Actualizando receta {} por médico {}", recetaId, medicoId);
 
-        validationHelper.validarActualizacionReceta(recetaId, medicoId);
+        try {
+            // 1. VALIDACIONES PREVIAS
+            validationHelper.validarActualizacionReceta(recetaId, medicoId);
 
-        return recetaCabRepository.findById(recetaId)
-                .filter(esActiva)
-                .filter(puedeModificarse)
-                .map(receta -> actualizarCamposReceta(receta, recetaDTO, medicoId))
-                .map(recetaCabRepository::save)
-                .map(toCompletaDTO)
-                .orElseThrow(() -> RecetaNotFoundException.receta(recetaId));
+            // 2. PREPARAR JSON PARA TU FUNCIÓN PUT
+            String datosActualizacionJson = prepararJsonParaActualizacion(recetaId, recetaDTO, medicoId);
+
+            // 3. EJECUTAR TU MÉTODO EXISTENTE actualizarRecetaAtomica
+            String resultadoJson = recetaCabRepository.actualizarRecetaAtomica(datosActualizacionJson);
+
+            // 4. PROCESAR RESULTADO
+            JsonNode resultado = objectMapper.readTree(resultadoJson);
+
+            if (resultado.get("success").asBoolean()) {
+                log.info("✅ Receta actualizada exitosamente ID: {}", recetaId);
+                return recetaCabRepository.findById(recetaId)
+                        .map(toCompletaDTO)
+                        .orElseThrow(() -> RecetaNotFoundException.receta(recetaId));
+            } else {
+                String error = resultado.get("error_message").asText();
+                throw new RecetaBusinessException(error);
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Error actualizando receta: {}", e.getMessage(), e);
+            throw new RecetaBusinessException("Error actualizando receta: " + e.getMessage());
+        }
     }
 
     @Override
@@ -136,12 +162,30 @@ public class RecetaServiceImpl implements RecetaService {
     public RecetaCompletaDTO cambiarEstadoReceta(Long recetaId, String nuevoEstado, Long medicoId) {
         log.info("📊 Cambiando estado de receta {} a {} por médico {}", recetaId, nuevoEstado, medicoId);
 
-        return recetaCabRepository.findById(recetaId)
-                .filter(receta -> Objects.equals(receta.getMedicoId(), medicoId))
-                .map(receta -> aplicarCambioEstado(receta, nuevoEstado, medicoId))
-                .map(recetaCabRepository::save)
-                .map(toCompletaDTO)
-                .orElseThrow(() -> RecetaBusinessException.permisosDenegados(medicoId, recetaId));
+        try {
+            // 1. PREPARAR JSON PARA TU FUNCIÓN PATCH
+            String datosEstadoJson = prepararJsonParaCambioEstado(recetaId, nuevoEstado, medicoId);
+
+            // 2. EJECUTAR TU MÉTODO EXISTENTE cambiarEstadoAtomica
+            String resultadoJson = recetaCabRepository.cambiarEstadoAtomica(datosEstadoJson);
+
+            // 3. PROCESAR RESULTADO
+            JsonNode resultado = objectMapper.readTree(resultadoJson);
+
+            if (resultado.get("success").asBoolean()) {
+                log.info("✅ Estado cambiado exitosamente ID: {}", recetaId);
+                return recetaCabRepository.findById(recetaId)
+                        .map(toCompletaDTO)
+                        .orElseThrow(() -> RecetaNotFoundException.receta(recetaId));
+            } else {
+                String error = resultado.get("error_message").asText();
+                throw new RecetaBusinessException(error);
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Error cambiando estado: {}", e.getMessage(), e);
+            throw new RecetaBusinessException("Error cambiando estado: " + e.getMessage());
+        }
     }
 
     // ===== 🔍 BÚSQUEDAS DE VADEMÉCUM =====
@@ -249,164 +293,147 @@ public class RecetaServiceImpl implements RecetaService {
         return recetaDTO;
     }
 
-    // ===== 🔧 MÉTODOS PRIVADOS =====
+    // ===== 🔧 MÉTODOS PRIVADOS PARA JSON =====
 
-    private RecetaCab convertirDTOaEntity(RecetaCabDTO dto) {
-        return RecetaCab.builder()
-                .id(dto.getId())
-                .numeroReceta(dto.getNumeroReceta())
-                .pacienteId(dto.getPacienteId())
-                .medicoId(dto.getMedicoId())
-                .tipoOrigen(dto.getTipoOrigen())
-                .origenId(dto.getOrigenId())
-                .fechaReceta(dto.getFechaReceta())
-                .fechaVencimiento(dto.getFechaVencimiento())
-                .diagnosticoPrincipal(dto.getDiagnosticoPrincipal())
-                .indicacionesGenerales(dto.getIndicacionesGenerales())
-                .estado(dto.getEstado())
-                .activo(dto.getActivo())
-                .creadoPor(dto.getCreadoPor())
-                .creadoEn(dto.getCreadoEn())
-                // 🎯 AGREGAR ESTAS 3 LÍNEAS QUE FALTAN:
-                .firmada(dto.getFirmada())           // ← NUEVA
-                .fechaFirma(dto.getFechaFirma())     // ← NUEVA
-                .firmaDigital(dto.getFirmaDigital()) // ← NUEVA
-                .build();
-    }
-
-    private void establecerDatosAutomaticos(RecetaCab receta) {
-        LocalDateTime ahora = LocalDateTime.now();
-
-        if (receta.getNumeroReceta() == null) {
-            receta.setNumeroReceta(generarNumeroReceta());
-        }
-        if (receta.getFechaReceta() == null) {
-            receta.setFechaReceta(ahora);
-        }
-        if (receta.getEstado() == null) {
-            receta.setEstado("01");
-        }
-        if (receta.getActivo() == null) {
-            receta.setActivo("S");
-        }
-        if (receta.getCreadoEn() == null) {
-            receta.setCreadoEn(ahora);
-        }
-        if (receta.getFechaVencimiento() == null) {
-            receta.setFechaVencimiento(LocalDate.now().plusDays(30));
-        }
-    }
-
-    private void procesarFirmaDigital(RecetaCab receta, RecetaCabDTO dto) {
-        log.info("🔐 PROCESANDO FIRMA DIGITAL");
-
+    private String prepararJsonParaCreacion(RecetaCabDTO recetaDTO) {
         try {
-            JsonNode firmaOriginal = dto.getFirmaDigital();
-            log.info("Firma en DTO: {}", firmaOriginal != null ? "EXISTE" : "NULL");
+            Map<String, Object> datos = new HashMap<>();
 
-            if (firmaOriginal == null) {
-                log.info("No hay firma - estableciendo valores por defecto");
-                receta.setFirmada("N");
-                receta.setFechaFirma(null);
-                receta.setFirmaDigital(null);
-                return;
+            // Datos básicos
+            datos.put("numero_receta", Optional.ofNullable(recetaDTO.getNumeroReceta()).orElse(generarNumeroReceta()));
+            datos.put("paciente_id", recetaDTO.getPacienteId());
+            datos.put("medico_id", recetaDTO.getMedicoId());
+            datos.put("tipo_origen", recetaDTO.getTipoOrigen());
+            datos.put("origen_id", recetaDTO.getOrigenId());
+            datos.put("diagnostico_principal", recetaDTO.getDiagnosticoPrincipal());
+            datos.put("indicaciones_generales", recetaDTO.getIndicacionesGenerales());
+
+            // Fechas
+            datos.put("fecha_receta", Optional.ofNullable(recetaDTO.getFechaReceta()).orElse(LocalDateTime.now()));
+            datos.put("fecha_vencimiento", Optional.ofNullable(recetaDTO.getFechaVencimiento()).orElse(LocalDate.now().plusDays(30)));
+
+            // Estado y firma
+            datos.put("estado", Optional.ofNullable(recetaDTO.getEstado()).orElse("01"));
+            datos.put("firmada", Optional.ofNullable(recetaDTO.getFirmada()).orElse("N"));
+            datos.put("fecha_firma", recetaDTO.getFechaFirma());
+            datos.put("firma_digital", recetaDTO.getFirmaDigital());
+
+            // Auditoría
+            datos.put("creado_por", recetaDTO.getCreadoPor());
+            datos.put("creado_en", Optional.ofNullable(recetaDTO.getCreadoEn()).orElse(LocalDateTime.now()));
+            datos.put("activo", "S");
+
+            // Medicamentos
+            if (recetaDTO.getMedicamentos() != null && !recetaDTO.getMedicamentos().isEmpty()) {
+                List<Map<String, Object>> medicamentos = recetaDTO.getMedicamentos().stream()
+                        .map(this::convertirMedicamentoAMap)
+                        .collect(Collectors.toList());
+                datos.put("medicamentos", medicamentos);
             }
 
-            // Verificar estructura
-            log.info("Tipo de nodo: {}", firmaOriginal.getNodeType());
-            log.info("Tiene imagen_base64: {}", firmaOriginal.has("imagen_base64"));
-
-            if (!firmaOriginal.has("imagen_base64")) {
-                log.warn("Firma sin imagen_base64");
-                receta.setFirmada("N");
-                receta.setFechaFirma(null);
-                receta.setFirmaDigital(null);
-                return;
-            }
-
-            String imagenBase64 = firmaOriginal.get("imagen_base64").asText();
-            log.info("Tamaño imagen: {} caracteres", imagenBase64.length());
-            log.info("Primeros 50 chars: {}", imagenBase64.substring(0, Math.min(50, imagenBase64.length())));
-
-            if (imagenBase64.length() < 100) {
-                log.warn("Imagen muy pequeña: {} chars", imagenBase64.length());
-                receta.setFirmada("N");
-                receta.setFechaFirma(null);
-                receta.setFirmaDigital(null);
-                return;
-            }
-
-            // AQUÍ ESTÁ EL PUNTO CRÍTICO - ASIGNAR LA FIRMA
-            log.info("Asignando firma digital a la entidad...");
-            receta.setFirmaDigital(firmaOriginal);
-            receta.setFirmada("S");
-            receta.setFechaFirma(dto.getFechaFirma() != null ? dto.getFechaFirma() : LocalDateTime.now());
-
-            log.info("Firma asignada - Estado final:");
-            log.info("  - firmada: {}", receta.getFirmada());
-            log.info("  - fecha_firma: {}", receta.getFechaFirma());
-            log.info("  - firma_digital es null: {}", receta.getFirmaDigital() == null);
-
-            // VERIFICACIÓN ADICIONAL
-            if (receta.getFirmaDigital() != null) {
-                log.info("  - firma_digital JSON: {}", receta.getFirmaDigital().toString().substring(0, Math.min(100, receta.getFirmaDigital().toString().length())));
-            }
+            return objectMapper.writeValueAsString(datos);
 
         } catch (Exception e) {
-            log.error("ERROR procesando firma digital: {}", e.getMessage(), e);
-            receta.setFirmada("N");
-            receta.setFechaFirma(null);
-            receta.setFirmaDigital(null);
+            log.error("❌ Error preparando JSON para creación: {}", e.getMessage(), e);
+            throw new RecetaBusinessException("Error preparando datos para creación");
         }
     }
 
-    // MÉTODO ADICIONAL: Verificar después del save
-    private void verificarFirmaDespuesDelSave(RecetaCab recetaGuardada) {
-        log.info("🔍 VERIFICANDO FIRMA DESPUÉS DEL SAVE:");
-        log.info("  - ID: {}", recetaGuardada.getId());
-        log.info("  - firmada: {}", recetaGuardada.getFirmada());
-        log.info("  - fecha_firma: {}", recetaGuardada.getFechaFirma());
-        log.info("  - firma_digital es null: {}", recetaGuardada.getFirmaDigital() == null);
+    private String prepararJsonParaActualizacion(Long recetaId, RecetaCabDTO recetaDTO, Long medicoId) {
+        try {
+            Map<String, Object> datos = new HashMap<>();
+            datos.put("receta_id", recetaId);
+            datos.put("medico_id", medicoId);
+            datos.put("diagnostico_principal", recetaDTO.getDiagnosticoPrincipal());
+            datos.put("indicaciones_generales", recetaDTO.getIndicacionesGenerales());
+            datos.put("fecha_vencimiento", recetaDTO.getFechaVencimiento());
+            datos.put("firma_digital", recetaDTO.getFirmaDigital());
+            datos.put("actualizado_por", medicoId);
+            datos.put("actualizado_en", LocalDateTime.now());
 
-        if (recetaGuardada.getFirmaDigital() != null) {
-            log.info("  - firma_digital tiene contenido: SÍ");
-            log.info("  - tamaño JSON: {}", recetaGuardada.getFirmaDigital().toString().length());
-        } else {
-            log.warn("  - firma_digital: NULL - NO SE GUARDÓ");
+            return objectMapper.writeValueAsString(datos);
+
+        } catch (Exception e) {
+            log.error("❌ Error preparando JSON para actualización: {}", e.getMessage(), e);
+            throw new RecetaBusinessException("Error preparando datos para actualización");
         }
     }
 
-    private void guardarMedicamentosDetalle(Long recetaId, List<RecetaDetDTO> medicamentos) {
-        log.debug("💊 Guardando {} medicamentos para receta {}", medicamentos.size(), recetaId);
+    private String prepararJsonParaCambioEstado(Long recetaId, String nuevoEstado, Long medicoId) {
+        try {
+            Map<String, Object> datos = new HashMap<>();
+            datos.put("receta_id", recetaId);
+            datos.put("nuevo_estado", nuevoEstado);
+            datos.put("medico_id", medicoId);
+            datos.put("actualizado_por", medicoId);
+            datos.put("actualizado_en", LocalDateTime.now());
 
-        LocalDateTime ahora = LocalDateTime.now();
+            return objectMapper.writeValueAsString(datos);
 
-        for (int i = 0; i < medicamentos.size(); i++) {
-            RecetaDetDTO medicamentoDTO = medicamentos.get(i);
-
-            RecetaDet medicamentoEntity = RecetaDet.builder()
-                    .recetaId(recetaId)
-                    .medicamentoId(medicamentoDTO.getMedicamentoId())
-                    .codigoMedicamento(medicamentoDTO.getCodigoMedicamento())
-                    .diagnosticoMedicamento(medicamentoDTO.getDiagnosticoMedicamento())
-                    .dosis(medicamentoDTO.getDosis())
-                    .frecuencia(medicamentoDTO.getFrecuencia())
-                    .duracionTratamiento(medicamentoDTO.getDuracionTratamiento())
-                    .cantidadTotal(medicamentoDTO.getCantidadTotal())
-                    .unidadCantidad(medicamentoDTO.getUnidadCantidad())
-                    .viaAdministracion(medicamentoDTO.getViaAdministracion())
-                    .instruccionesEspeciales(medicamentoDTO.getInstruccionesEspeciales())
-                    .conAlimentos(medicamentoDTO.getConAlimentos())
-                    .momentoAdministracion(medicamentoDTO.getMomentoAdministracion())
-                    .ordenItem(i + 1)
-                    .estado("01")
-                    .activo("S")
-                    .creadoPor(medicamentoDTO.getCreadoPor())
-                    .creadoEn(ahora)
-                    .build();
-
-            recetaDetRepository.save(medicamentoEntity);
+        } catch (Exception e) {
+            log.error("❌ Error preparando JSON para cambio de estado: {}", e.getMessage(), e);
+            throw new RecetaBusinessException("Error preparando datos para cambio de estado");
         }
+    }
+
+    private Map<String, Object> convertirMedicamentoAMap(RecetaDetDTO medicamento) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("medicamento_id", medicamento.getMedicamentoId());
+        map.put("codigo_medicamento", medicamento.getCodigoMedicamento());
+        map.put("diagnostico_medicamento", medicamento.getDiagnosticoMedicamento());
+        map.put("dosis", medicamento.getDosis());
+        map.put("frecuencia", medicamento.getFrecuencia());
+        map.put("duracion_tratamiento", medicamento.getDuracionTratamiento());
+        map.put("cantidad_total", medicamento.getCantidadTotal());
+        map.put("unidad_cantidad", medicamento.getUnidadCantidad());
+        map.put("via_administracion", medicamento.getViaAdministracion());
+        map.put("instrucciones_especiales", medicamento.getInstruccionesEspeciales());
+        map.put("con_alimentos", medicamento.getConAlimentos());
+        map.put("momento_administracion", medicamento.getMomentoAdministracion());
+        map.put("orden_item", medicamento.getOrdenItem());
+        map.put("creado_por", medicamento.getCreadoPor());
+        return map;
+    }
+
+    // ===== 🔧 MÉTODOS DE CONVERSIÓN EXISTENTES =====
+
+    private boolean esMedicamentoDisponible(RecetaDetDTO medicamento) {
+        return vademecumRepository.findByCodigoMedicamento(medicamento.getCodigoMedicamento())
+                .map(med -> "S".equals(med.getDisponible()) && "S".equals(med.getActivo()))
+                .orElse(false);
+    }
+
+    private Map<String, Object> convertirEstadisticaMedicamento(Object[] stat) {
+        return Map.of(
+                "nombre_medicamento", stat[0],
+                "concentracion", stat[1],
+                "total_prescripciones", stat[2]
+        );
+    }
+
+    private RecetaCompletaDTO convertirARecetaCompleta(RecetaCab receta) {
+        log.debug("🔄 Convirtiendo receta {} con medicamentos", receta.getId());
+
+        List<RecetaDetDTO> medicamentos = cargarMedicamentosComoDTO(receta.getId());
+
+        return RecetaCompletaDTO.builder()
+                .recetaInfo(RecetaCompletaDTO.RecetaInfoDTO.builder()
+                        .id(receta.getId())
+                        .numeroReceta(receta.getNumeroReceta())
+                        .fechaReceta(receta.getFechaReceta())
+                        .fechaVencimiento(receta.getFechaVencimiento())
+                        .estado(receta.getEstado())
+                        .estadoDescripcion(obtenerDescripcionEstado(receta.getEstado()))
+                        .diagnosticoPrincipal(receta.getDiagnosticoPrincipal())
+                        .indicacionesGenerales(receta.getIndicacionesGenerales())
+                        .firmada(receta.getFirmada())
+                        .fechaFirma(receta.getFechaFirma())
+                        .tipoOrigen(receta.getTipoOrigen())
+                        .origenId(receta.getOrigenId())
+                        .build())
+                .firmaDigital(receta.getFirmaDigital())
+                .medicamentos(medicamentos)
+                .build();
     }
 
     private List<RecetaDetDTO> cargarMedicamentosComoDTO(Long recetaId) {
@@ -461,84 +488,6 @@ public class RecetaServiceImpl implements RecetaService {
         }
 
         return builder.build();
-    }
-
-    private RecetaCab actualizarCamposReceta(RecetaCab receta, RecetaCabDTO dto, Long medicoId) {
-        LocalDateTime ahora = LocalDateTime.now();
-
-        Optional.ofNullable(dto.getDiagnosticoPrincipal()).ifPresent(receta::setDiagnosticoPrincipal);
-        Optional.ofNullable(dto.getIndicacionesGenerales()).ifPresent(receta::setIndicacionesGenerales);
-        Optional.ofNullable(dto.getFechaVencimiento()).ifPresent(receta::setFechaVencimiento);
-
-        if (dto.getFirmaDigital() != null) {
-            procesarFirmaDigital(receta, dto);
-        }
-
-        receta.setActualizadoPor(medicoId);
-        receta.setActualizadoEn(ahora);
-
-        return receta;
-    }
-
-    private RecetaCab aplicarCambioEstado(RecetaCab receta, String nuevoEstado, Long medicoId) {
-        validarCambioEstado(receta.getEstado(), nuevoEstado);
-
-        receta.setEstado(nuevoEstado);
-        receta.setActualizadoPor(medicoId);
-        receta.setActualizadoEn(LocalDateTime.now());
-
-        return receta;
-    }
-
-    private void validarCambioEstado(String estadoActual, String nuevoEstado) {
-        Map<String, List<String>> transicionesValidas = Map.of(
-                "01", List.of("02", "04"),
-                "02", List.of(),
-                "04", List.of()
-        );
-
-        if (!transicionesValidas.getOrDefault(estadoActual, Collections.emptyList()).contains(nuevoEstado)) {
-            throw RecetaValidationException.estadoInvalido(nuevoEstado);
-        }
-    }
-
-    private boolean esMedicamentoDisponible(RecetaDetDTO medicamento) {
-        return vademecumRepository.findByCodigoMedicamento(medicamento.getCodigoMedicamento())
-                .map(med -> "S".equals(med.getDisponible()) && "S".equals(med.getActivo()))
-                .orElse(false);
-    }
-
-    private Map<String, Object> convertirEstadisticaMedicamento(Object[] stat) {
-        return Map.of(
-                "nombre_medicamento", stat[0],
-                "concentracion", stat[1],
-                "total_prescripciones", stat[2]
-        );
-    }
-
-    private RecetaCompletaDTO convertirARecetaCompleta(RecetaCab receta) {
-        log.debug("🔄 Convirtiendo receta {} con medicamentos y firma", receta.getId());
-
-        List<RecetaDetDTO> medicamentos = cargarMedicamentosComoDTO(receta.getId());
-
-        return RecetaCompletaDTO.builder()
-                .recetaInfo(RecetaCompletaDTO.RecetaInfoDTO.builder()
-                        .id(receta.getId())
-                        .numeroReceta(receta.getNumeroReceta())
-                        .fechaReceta(receta.getFechaReceta())
-                        .fechaVencimiento(receta.getFechaVencimiento())
-                        .estado(receta.getEstado())
-                        .estadoDescripcion(obtenerDescripcionEstado(receta.getEstado()))
-                        .diagnosticoPrincipal(receta.getDiagnosticoPrincipal())
-                        .indicacionesGenerales(receta.getIndicacionesGenerales())
-                        .firmada(receta.getFirmada())
-                        .fechaFirma(receta.getFechaFirma())
-                        .tipoOrigen(receta.getTipoOrigen())
-                        .origenId(receta.getOrigenId())
-                        .build())
-                .firmaDigital(receta.getFirmaDigital())
-                .medicamentos(medicamentos)
-                .build();
     }
 
     private MedicamentoVademecumDTO convertirMedicamentoADTO(MedicamentoVademecum medicamento) {

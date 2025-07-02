@@ -13,23 +13,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 🛡️ HELPER PARA TODAS LAS VALIDACIONES DE RECETAS
- * Aquí concentramos TODA la lógica de validación
+ * Helper para todas las validaciones de recetas
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class RecetaValidationHelper {
 
     private final RecetaCabRepository recetaCabRepository;
 
-    // ===== 🔒 VALIDACIONES DE CREACIÓN =====
+    // ===== VALIDACIONES DE CREACIÓN =====
 
     /**
      * Valida que se pueda crear una nueva receta
      */
     public void validarCreacionReceta(RecetaCabDTO dto) {
-        log.debug("🔍 Validando creación de receta para {} ID {}", dto.getTipoOrigen(), dto.getOrigenId());
+        log.debug("Validando creación de receta para {} ID {}", dto.getTipoOrigen(), dto.getOrigenId());
 
         // Regla 1: No receta duplicada mismo día
         validarRecetaDuplicadaMismoDia(dto.getTipoOrigen(), dto.getOrigenId());
@@ -48,10 +47,10 @@ public class RecetaValidationHelper {
      * Valida que se pueda actualizar una receta
      */
     public void validarActualizacionReceta(Long recetaId, Long medicoId) {
-        log.debug("🔍 Validando actualización de receta {} por médico {}", recetaId, medicoId);
+        log.debug("Validando actualización de receta {} por médico {}", recetaId, medicoId);
 
         RecetaCab receta = recetaCabRepository.findById(recetaId)
-                .orElseThrow(() -> com.formacionbdi.microservicios.app.receta.exception.RecetaNotFoundException.receta(recetaId));
+                .orElseThrow(() -> RecetaNotFoundException.receta(recetaId));
 
         // Regla 1: Solo hasta 24h antes de vencimiento
         validarTiempoParaActualizar(receta);
@@ -63,50 +62,51 @@ public class RecetaValidationHelper {
         validarEstadoModificable(receta);
     }
 
-    // ===== 🕐 VALIDACIONES DE TIEMPO =====
+    // ===== VALIDACIONES DE TIEMPO =====
 
     private void validarTiempoParaActualizar(RecetaCab receta) {
         if (receta.getFechaVencimiento() == null) {
-            throw RecetaValidationException.fechaVencimientoInvalida();
+            throw new RecetaValidationException("La fecha de vencimiento es inválida");
         }
 
         LocalDateTime ahora = LocalDateTime.now();
         LocalDateTime limite = receta.getFechaVencimiento().atStartOfDay().minusHours(24);
 
         if (ahora.isAfter(limite)) {
-            throw RecetaBusinessException.recetaNoModificable(receta.getId());
+            throw new RecetaBusinessException("La receta " + receta.getId() + " no puede ser modificada");
         }
     }
 
-    // ===== 👤 VALIDACIONES DE PERMISOS =====
+    // ===== VALIDACIONES DE PERMISOS =====
 
     private void validarPermisosMedico(RecetaCab receta, Long medicoId) {
         if (!receta.getMedicoId().equals(medicoId)) {
-            throw com.formacionbdi.microservicios.app.receta.exception.RecetaBusinessException.permisosDenegados(medicoId, receta.getId());
+            throw RecetaBusinessException.permisosDenegados(medicoId, receta.getId());
         }
     }
 
-    // ===== 📊 VALIDACIONES DE ESTADO =====
+    // ===== VALIDACIONES DE ESTADO =====
 
     private void validarEstadoModificable(RecetaCab receta) {
         if (!"01".equals(receta.getEstado())) {
-            throw com.formacionbdi.microservicios.app.receta.exception.RecetaBusinessException.recetaYaFinalizada(receta.getId());
+            throw RecetaBusinessException.conflictoEstado(
+                String.format("La receta %d ya está finalizada", receta.getId())
+            );
         }
     }
 
-    // ===== 📅 VALIDACIONES DE DUPLICACIÓN =====
+    // ===== VALIDACIONES DE DUPLICACIÓN =====
 
     private void validarRecetaDuplicadaMismoDia(String tipoOrigen, Long origenId) {
         // NUEVA LÓGICA: Solo validar medicamentos duplicados, NO recetas duplicadas
-        // Ya no usamos existeRecetaMismoOrigenHoy()
-        log.debug("✅ Permitiendo múltiples recetas del mismo origen en el mismo día");
+        log.debug("Permitiendo múltiples recetas del mismo origen en el mismo día");
     }
 
-    // ===== 💊 VALIDACIONES DE MEDICAMENTOS =====
+    // ===== VALIDACIONES DE MEDICAMENTOS =====
 
     private void validarMedicamentosReceta(List<RecetaDetDTO> medicamentos) {
         if (medicamentos == null || medicamentos.isEmpty()) {
-            throw RecetaValidationException.medicamentosSinEspecificar();
+            throw RecetaBusinessException.datosInvalidos("No se han especificado medicamentos");
         }
 
         for (RecetaDetDTO medicamento : medicamentos) {
@@ -117,16 +117,16 @@ public class RecetaValidationHelper {
     private void validarMedicamentoIndividual(RecetaDetDTO medicamento) {
         // Validar dosis
         if (medicamento.getDosis() == null || medicamento.getDosis().trim().isEmpty()) {
-            throw RecetaValidationException.dosisInvalida(medicamento.getDosis());
+            throw RecetaBusinessException.datosInvalidos("La dosis es inválida: " + medicamento.getDosis());
         }
 
         // Validar frecuencia
         if (medicamento.getFrecuencia() == null || medicamento.getFrecuencia().trim().isEmpty()) {
-            throw RecetaValidationException.frecuenciaInvalida(medicamento.getFrecuencia());
+            throw RecetaBusinessException.datosInvalidos("La frecuencia es inválida: " + medicamento.getFrecuencia());
         }
     }
 
-    // ===== 💊 NUEVA VALIDACIÓN DE MEDICAMENTOS DUPLICADOS =====
+    // ===== VALIDACIÓN DE MEDICAMENTOS DUPLICADOS =====
 
     private void validarMedicamentosDuplicadosMismoDia(String tipoOrigen, Long origenId, List<RecetaDetDTO> medicamentos) {
         if (medicamentos == null || medicamentos.isEmpty()) {
@@ -135,18 +135,21 @@ public class RecetaValidationHelper {
 
         List<Long> medicamentoIds = medicamentos.stream()
                 .map(RecetaDetDTO::getMedicamentoId)
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
 
         boolean tieneMedicamentosDuplicados = recetaCabRepository.existeRecetaConMedicamentosDuplicadosHoy(
                 tipoOrigen, origenId, medicamentoIds
         );
 
         if (tieneMedicamentosDuplicados) {
-            throw RecetaBusinessException.medicamentosDuplicadosMismoDia(tipoOrigen, origenId);
+            throw RecetaBusinessException.conflictoEstado(
+                String.format("Ya existe una receta con los mismos medicamentos hoy para %s %d", 
+                    tipoOrigen, origenId)
+            );
         }
     }
 
-    // ===== 🔢 VALIDACIONES DE CANTIDAD =====
+    // ===== VALIDACIONES DE CANTIDAD =====
 
     private void validarCantidadesMedicamentos(List<RecetaDetDTO> medicamentos) {
         for (RecetaDetDTO medicamento : medicamentos) {
@@ -157,23 +160,23 @@ public class RecetaValidationHelper {
     private void validarCantidadMedicamento(RecetaDetDTO medicamento) {
         BigDecimal cantidad = medicamento.getCantidadTotal();
         if (cantidad == null) {
-            throw com.formacionbdi.microservicios.app.receta.exception.RecetaValidationException.cantidadInvalida("cantidad_total", 0);
+            throw RecetaBusinessException.datosInvalidos("La cantidad es inválida para: cantidad_total = 0");
         }
 
         if (cantidad.compareTo(BigDecimal.ZERO) <= 0 || cantidad.compareTo(new BigDecimal("2")) > 0) {
-            throw com.formacionbdi.microservicios.app.receta.exception.RecetaBusinessException.cantidadExcesiva(
-                    medicamento.getCodigoMedicamento(),
-                    cantidad.doubleValue()
+            throw RecetaBusinessException.noProcesable(
+                String.format("Cantidad excesiva para el medicamento %s: %s", 
+                    medicamento.getCodigoMedicamento(), cantidad.toString())
             );
         }
     }
 
-    // ===== 📅 VALIDACIONES DE FECHAS =====
+    // ===== VALIDACIONES DE FECHAS =====
 
     private void validarFechasReceta(RecetaCabDTO dto) {
         if (dto.getFechaVencimiento() != null && dto.getFechaReceta() != null) {
             if (dto.getFechaVencimiento().isBefore(dto.getFechaReceta().toLocalDate())) {
-                throw RecetaValidationException.fechaVencimientoInvalida();
+                throw RecetaBusinessException.datosInvalidos("La fecha de vencimiento es inválida");
             }
         }
     }

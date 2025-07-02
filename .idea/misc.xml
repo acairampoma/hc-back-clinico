@@ -22,6 +22,10 @@
         <option value="$PROJECT_DIR$/microservicios-receta/pom.xml" />
         <option value="$PROJECT_DIR$/microservicios-orden/pom.xml" />
         <option value="$PROJECT_DIR$/microservicios-catalogos/pom.xml" />
+        <option value="$PROJECT_DIR$/microservicios-hl7/pom.xml" />
+        <option value="$PROJECT_DIR$/microservicios-hl7-simulator/pom.xml" />
+        <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/commons-response/pom.xml" />
       </list>
     </option>
     <option name="workspaceImportForciblyTurnedOn" value="true" />

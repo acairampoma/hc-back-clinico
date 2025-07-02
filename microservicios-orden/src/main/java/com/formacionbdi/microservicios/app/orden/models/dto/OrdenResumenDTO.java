@@ -1,46 +1,65 @@
 package com.formacionbdi.microservicios.app.orden.models.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class OrdenResumenDTO {
-
-    private Long id;
-    private String numeroOrden;
-    private Long pacienteId;
-
-    // ORIGEN
-    private String tipoOrigen;
-    private String tipoOrigenDescripcion;
-
-    // TIPO Y ESTADO
-    private String tipoOrden;
-    private String estado;
-    private String estadoDescripcion;
-    private String prioridad;
-    private String prioridadDescripcion;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime fechaOrden;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaProgramada;
-
-    // CONTADORES
-    private Integer totalExamenes;
-    private String firmada;
-
-    // DATOS BÁSICOS PACIENTE (si se incluye JOIN)
-    private String nombrePaciente;
-    private String numeroDocumento;
+/**
+ * DTO para mostrar resumen de órdenes en listados
+ * Implementado como record para inmutabilidad
+ */
+public record OrdenResumenDTO(
+    Long id,
+    String numeroOrden,
+    Long pacienteId,
+    String nombrePaciente,
+    Long medicoId,
+    String nombreMedico,
+    String tipoOrigen,
+    String tipoOrigenDescripcion,
+    Long origenId,
+    String tipoOrden,
+    LocalDate fechaOrden,
+    LocalDate fechaProgramada,
+    String diagnosticoPrincipal,
+    String prioridad,
+    String prioridadDescripcion,
+    String estado,
+    String estadoDescripcion,
+    String firmada,
+    int cantidadExamenes,
+    LocalDateTime creadoEn
+) {
+    /**
+     * Constructor estático para facilitar la creación
+     */
+    public static OrdenResumenDTO crear(
+            Long id,
+            String numeroOrden,
+            Long pacienteId,
+            String nombrePaciente,
+            Long medicoId,
+            String nombreMedico,
+            String tipoOrigen,
+            String tipoOrigenDescripcion,
+            Long origenId,
+            String tipoOrden,
+            LocalDate fechaOrden,
+            LocalDate fechaProgramada,
+            String diagnosticoPrincipal,
+            String prioridad,
+            String prioridadDescripcion,
+            String estado,
+            String estadoDescripcion,
+            String firmada,
+            int cantidadExamenes,
+            LocalDateTime creadoEn
+    ) {
+        return new OrdenResumenDTO(
+                id, numeroOrden, pacienteId, nombrePaciente, medicoId, nombreMedico,
+                tipoOrigen, tipoOrigenDescripcion, origenId, tipoOrden,
+                fechaOrden, fechaProgramada, diagnosticoPrincipal,
+                prioridad, prioridadDescripcion, estado, estadoDescripcion,
+                firmada, cantidadExamenes, creadoEn
+        );
+    }
 }
